@@ -651,8 +651,72 @@
             100% { transform: rotate(360deg) translateX(150px) rotate(-360deg); }
         }
 
-        /* Responsividade */
-        @media (max-width: 768px) {
+        /* ============================================= */
+        /* MELHORIAS DE RESPONSIVIDADE */
+        /* ============================================= */
+
+        /* Menu mobile */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+            background: var(--primary);
+            color: var(--dark);
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100%;
+            background: var(--darker);
+            z-index: 999;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            padding: 1.5rem;
+            overflow-y: auto;
+            border-right: 1px solid var(--gray);
+        }
+        
+        .mobile-sidebar.active {
+            transform: translateX(0);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Ajustes para telas menores */
+        @media (max-width: 1200px) {
+            .status-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 992px) {
             .container {
                 grid-template-columns: 1fr;
             }
@@ -663,42 +727,161 @@
             
             .mobile-menu-btn {
                 display: block;
-                position: fixed;
-                top: 1rem;
-                left: 1rem;
-                z-index: 1000;
-                background: var(--primary);
-                color: var(--dark);
-                border: none;
-                border-radius: 5px;
-                padding: 0.5rem;
-                font-size: 1.2rem;
-            }
-            
-            .mobile-sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 280px;
-                height: 100%;
-                background: var(--darker);
-                z-index: 999;
-                transform: translateX(-100%);
-                transition: transform 0.3s;
-                padding: 1.5rem;
-                overflow-y: auto;
-            }
-            
-            .mobile-sidebar.active {
-                transform: translateX(0);
             }
             
             .content {
                 padding: 1rem;
+                padding-top: 4rem;
             }
             
             .status-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .status-value {
+                font-size: 1.8rem;
+            }
+            
+            .terminal-header {
+                padding: 1rem;
+            }
+            
+            .logo {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .status-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .status-card {
+                padding: 1rem;
+            }
+            
+            .status-value {
+                font-size: 1.6rem;
+            }
+            
+            .chart-container {
+                padding: 1rem;
+            }
+            
+            .btn {
+                padding: 0.7rem 1.2rem;
+                margin: 0.3rem;
+                font-size: 0.9rem;
+            }
+            
+            .login-box {
+                padding: 1.5rem;
+            }
+            
+            .login-logo {
+                font-size: 2.2rem;
+            }
+            
+            .terminal-output {
+                padding: 1rem;
+                min-height: 250px;
+            }
+            
+            .log-container {
+                height: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content {
+                padding: 0.5rem;
+                padding-top: 4rem;
+            }
+            
+            .status-value {
+                font-size: 1.4rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin: 0.3rem 0;
+            }
+            
+            .login-input {
+                padding: 1rem;
+            }
+            
+            .login-btn {
+                padding: 1rem;
+            }
+            
+            .mobile-sidebar {
+                width: 250px;
+            }
+            
+            h2 {
+                font-size: 1.3rem;
+            }
+            
+            h3 {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Melhorias para toque em dispositivos móveis */
+        @media (hover: none) {
+            .menu-item:hover {
+                transform: none;
+                border-color: transparent;
+            }
+            
+            .menu-item:active {
+                border-color: var(--primary);
+                transform: translateX(5px);
+            }
+            
+            .btn:hover {
+                transform: none;
+            }
+            
+            .btn:active {
+                transform: scale(0.98);
+            }
+            
+            .status-card:hover {
+                transform: none;
+                border-color: var(--gray);
+            }
+            
+            .status-card:active {
+                border-color: var(--primary);
+                transform: translateY(-2px);
+            }
+        }
+
+        /* Ajustes para orientação paisagem em dispositivos móveis */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .login-container {
+                min-height: 120vh;
+            }
+            
+            .login-box {
+                padding: 1.5rem;
+                margin: 1rem 0;
+            }
+            
+            .login-input {
+                padding: 0.8rem;
+                margin: 0.5rem 0;
+            }
+            
+            .login-btn {
+                padding: 0.8rem;
+                margin: 0.8rem 0;
             }
         }
 
@@ -777,8 +960,42 @@
     
     <!-- Sistema Principal (inicialmente oculto) -->
     <div class="terminal-header" id="terminal-header">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
         <div class="logo">🛰 IJR.RX</div>
         <div class="subtitle">Monitoramento e Otimização em Tempo Real</div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <div class="user-info">
+            <div>👤 Usuário: <span id="current-user-mobile">Convidado</span></div>
+            <div class="user-key">Chave: <span id="current-key-mobile">---</span></div>
+            <div id="key-status-display-mobile"></div>
+            <div id="key-expiry-info-mobile" class="key-expiry"></div>
+        </div>
+        
+        <div class="menu-item active" data-panel="dashboard">
+            <span>📊</span> Dashboard
+        </div>
+        <div class="menu-item" data-panel="speedtest">
+            <span>🚀</span> Teste de Velocidade
+        </div>
+        <div class="menu-item" data-panel="monitor">
+            <span>📡</span> Monitor em Tempo Real
+        </div>
+        <div class="menu-item" data-panel="diagnostics">
+            <span>🔧</span> Diagnóstico
+        </div>
+        <div class="menu-item" data-panel="optimization">
+            <span>⚡</span> Otimização
+        </div>
+        <div class="menu-item" data-panel="settings">
+            <span>⚙</span> Configurações
+        </div>
+        
+        <button class="btn-logout" id="logout-btn-mobile">
+            <span>🚪</span> Sair do Sistema
+        </button>
     </div>
     
     <div class="container" id="main-container">
@@ -1272,9 +1489,9 @@
 
         function updateKeyStatusDisplay(keyData) {
             const statusDisplay = document.getElementById('key-status-display');
+            const statusDisplayMobile = document.getElementById('key-status-display-mobile');
             const expiryInfo = document.getElementById('key-expiry-info');
-            
-            if (!statusDisplay) return;
+            const expiryInfoMobile = document.getElementById('key-expiry-info-mobile');
             
             let statusText = '';
             let statusClass = '';
@@ -1306,9 +1523,20 @@
                 }
             }
             
-            statusDisplay.innerHTML = `<span class="key-status ${statusClass}">${statusText}</span>`;
+            if (statusDisplay) {
+                statusDisplay.innerHTML = `<span class="key-status ${statusClass}">${statusText}</span>`;
+            }
+            
+            if (statusDisplayMobile) {
+                statusDisplayMobile.innerHTML = `<span class="key-status ${statusClass}">${statusText}</span>`;
+            }
+            
             if (expiryInfo) {
                 expiryInfo.textContent = expiryText;
+            }
+            
+            if (expiryInfoMobile) {
+                expiryInfoMobile.textContent = expiryText;
             }
         }
 
@@ -1325,6 +1553,9 @@
             if (isMonitoring) {
                 toggleRealTimeMonitor();
             }
+            
+            // Fechar menu mobile se estiver aberto
+            closeMobileMenu();
             
             // Limpar dados
             localStorage.removeItem('starlinkUser');
@@ -1356,7 +1587,9 @@
             
             // Atualizar informações do usuário
             document.getElementById('current-user').textContent = userName;
+            document.getElementById('current-user-mobile').textContent = userName;
             document.getElementById('current-key').textContent = accessKey;
+            document.getElementById('current-key-mobile').textContent = accessKey;
             
             // Atualizar status da chave
             updateKeyStatusDisplay(currentKeyData);
@@ -1378,6 +1611,32 @@
             setTimeout(() => {
                 messageEl.style.display = 'none';
             }, 5000);
+        }
+
+        // =============================================
+        // MENU MOBILE
+        // =============================================
+
+        function toggleMobileMenu() {
+            const mobileSidebar = document.getElementById('mobile-sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            if (mobileSidebar.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                mobileSidebar.classList.add('active');
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeMobileMenu() {
+            const mobileSidebar = document.getElementById('mobile-sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            mobileSidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
         }
 
         // =============================================
@@ -1434,6 +1693,9 @@
                     this.classList.add('active');
                     const panelId = this.getAttribute('data-panel');
                     document.getElementById(panelId).classList.add('active');
+                    
+                    // Fechar menu mobile após selecionar um item
+                    closeMobileMenu();
                 });
             });
         }
@@ -1712,12 +1974,17 @@
             // Configurar eventos
             document.getElementById('login-btn').addEventListener('click', loginUser);
             document.getElementById('logout-btn').addEventListener('click', logoutUser);
+            document.getElementById('logout-btn-mobile').addEventListener('click', logoutUser);
             
             document.getElementById('access-key').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     loginUser();
                 }
             });
+
+            // Menu mobile
+            document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileMenu);
+            document.getElementById('overlay').addEventListener('click', closeMobileMenu);
 
             // Inicializar sistema
             initializeLoginSystem();
