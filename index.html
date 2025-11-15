@@ -921,6 +921,25 @@
             90% { opacity: 1; }
             100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
         }
+
+        /* Link para Admin */
+        .admin-link {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+
+        .admin-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .admin-link a:hover {
+            text-decoration: underline;
+            text-shadow: 0 0 10px var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -946,6 +965,10 @@
             
             <div style="margin-top: 1rem; font-size: 0.9rem; color: #ccc;">
                 💡 Solicite uma chave de acesso ao administrador: @ijr.rx ou (91) 981970504
+            </div>
+
+            <div class="admin-link">
+                <a href="admin.html" target="_blank">🔧 Acessar Painel Administrativo</a>
             </div>
 
             <!-- Debug info -->
@@ -1217,7 +1240,7 @@
         let isMonitoring = false;
 
         // =============================================
-        // FUNÇÕES DO SISTEMA DE CHAVES (COMPATÍVEL COM ADMIN)
+        // FUNÇÕES DO SISTEMA DE CHAVES
         // =============================================
 
         function initializeLoginSystem() {
