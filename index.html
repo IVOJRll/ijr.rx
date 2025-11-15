@@ -1203,17 +1203,8 @@
 
     <script>
         // =============================================
-        // DECLARAÇÃO DE VARIÁVEIS GLOBAIS
+        // SISTEMA DE CHAVES INTEGRADO COM PAINEL ADMIN
         // =============================================
-
-        // Chaves de emergência para teste
-        const EMERGENCY_KEYS = [
-            'STAR-123456-TEST-KEY',
-            'DEV-ACCESS-KEY-2024', 
-            'IJR-RX-MASTER-KEY',
-            'TEST-123456-ABCD-KEY',
-            'VIP-789012-EFGH-KEY'
-        ];
 
         // Sistema de Login
         let currentUser = null;
@@ -1226,7 +1217,7 @@
         let isMonitoring = false;
 
         // =============================================
-        // FUNÇÕES DO SISTEMA DE CHAVES
+        // FUNÇÕES DO SISTEMA DE CHAVES (COMPATÍVEL COM ADMIN)
         // =============================================
 
         function initializeLoginSystem() {
@@ -1281,8 +1272,9 @@
         }
 
         function validateKey(key) {
-            // 1. Verificar chaves de emergência
-            if (EMERGENCY_KEYS.includes(key)) {
+            // 1. Verificar chaves de emergência do localStorage
+            const emergencyKeys = getEmergencyKeys();
+            if (emergencyKeys.includes(key)) {
                 console.log('Chave de emergência aceita:', key);
                 return {
                     valid: true,
@@ -1296,7 +1288,7 @@
                 };
             }
             
-            // 2. Verificar chaves do localStorage
+            // 2. Verificar chaves do sistema no localStorage
             const keys = loadKeysFromStorage();
             const validKey = keys.find(k => k.key === key);
             
@@ -1317,6 +1309,14 @@
                     };
                 }
                 
+                // Verificar se atingiu o limite de usos
+                if (validKey.maxUses > 0 && (validKey.uses || 0) >= validKey.maxUses) {
+                    return {
+                        valid: false,
+                        message: 'Limite de usos atingido'
+                    };
+                }
+                
                 console.log('Chave do sistema encontrada:', key);
                 return {
                     valid: true,
@@ -1324,9 +1324,9 @@
                 };
             }
             
-            // 3. Verificar formato básico da chave
+            // 3. Verificar formato básico da chave (fallback)
             if (isValidKeyFormat(key)) {
-                console.log('Chave com formato válido:', key);
+                console.log('Chave com formato válido (fallback):', key);
                 return {
                     valid: true,
                     keyData: {
@@ -1346,6 +1346,26 @@
             };
         }
 
+        function getEmergencyKeys() {
+            try {
+                const emergencyKeys = localStorage.getItem('emergencyKeys');
+                if (emergencyKeys) {
+                    return emergencyKeys.split('\n').filter(key => key.trim() !== '');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar chaves de emergência:', error);
+            }
+            
+            // Fallback para chaves padrão
+            return [
+                'STAR-123456-TEST-KEY',
+                'DEV-ACCESS-KEY-2024', 
+                'IJR-RX-MASTER-KEY',
+                'TEST-123456-ABCD-KEY',
+                'VIP-789012-EFGH-KEY'
+            ];
+        }
+
         function validateKeyWithDebug(key) {
             const debug = {
                 key: key,
@@ -1353,7 +1373,8 @@
             };
             
             // Check 1: Chaves de emergência
-            if (EMERGENCY_KEYS.includes(key)) {
+            const emergencyKeys = getEmergencyKeys();
+            if (emergencyKeys.includes(key)) {
                 debug.checks.push({ type: 'emergency', valid: true, message: 'Chave de emergência válida' });
                 return debug;
             }
@@ -1387,6 +1408,14 @@
                         type: 'expiration', 
                         valid: false, 
                         message: 'Chave expirada' 
+                    });
+                }
+                
+                if (validKey.maxUses > 0 && (validKey.uses || 0) >= validKey.maxUses) {
+                    debug.checks.push({ 
+                        type: 'usage', 
+                        valid: false, 
+                        message: 'Limite de usos atingido' 
                     });
                 }
                 
@@ -1442,16 +1471,6 @@
             }
         }
 
-        function showAvailableKeys() {
-            const keys = loadKeysFromStorage();
-            const emergencyKeys = EMERGENCY_KEYS;
-            
-            console.log('=== CHAVES DISPONÍVEIS ===');
-            console.log('Chaves do sistema:', keys);
-            console.log('Chaves de emergência:', emergencyKeys);
-            console.log('========================');
-        }
-
         function updateDebugInfo(debugInfo) {
             const debugContent = document.getElementById('debug-content');
             let html = `<div><strong>Chave:</strong> ${debugInfo.key}</div>`;
@@ -1502,6 +1521,9 @@
                 statusClass = 'status-inactive';
             } else if (keyData.expiration && new Date() > new Date(keyData.expiration)) {
                 statusText = 'EXPIRADA';
+                statusClass = 'status-expired';
+            } else if (keyData.maxUses > 0 && (keyData.uses || 0) >= keyData.maxUses) {
+                statusText = 'ESGOTADA';
                 statusClass = 'status-expired';
             } else {
                 statusText = 'ATIVA';
@@ -1992,10 +2014,10 @@
             // Debug
             setTimeout(() => {
                 console.log('=== SISTEMA INICIADO ===');
-                showAvailableKeys();
+                console.log('Chaves do sistema:', loadKeysFromStorage());
+                console.log('Chaves de emergência:', getEmergencyKeys());
             }, 1000);
         });
     </script>
 </body>
 </html>
-
