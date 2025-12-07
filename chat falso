@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Chat Falso do Instagram</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .warning {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-left: 5px solid #e1306c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .config-panel {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .chat-preview {
+            flex: 2;
+            min-width: 400px;
+            background-color: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #405de6;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input[type="text"]:focus, textarea:focus {
+            border-color: #405de6;
+            outline: none;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .emoji-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .emoji-btn {
+            font-size: 1.5rem;
+            background: none;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .emoji-btn:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.1);
+        }
+        
+        .profile-pic-upload {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .profile-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e1306c;
+        }
+        
+        .btn {
+            background-color: #405de6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2a48d6;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: #833ab4;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #6a2d93;
+        }
+        
+        .btn-danger {
+            background-color: #e1306c;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c91e56;
+        }
+        
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        /* Estilo do chat do Instagram */
+        .chat-header {
+            background: linear-gradient(135deg, #405de6, #5851db, #833ab4);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .chat-header-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .chat-header-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 3px;
+        }
+        
+        .chat-header-info p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            background-color: #fafafa;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+        
+        .message.sent {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-top: auto;
+        }
+        
+        .message.sent .message-avatar {
+            margin-left: 10px;
+        }
+        
+        .message.received .message-avatar {
+            margin-right: 10px;
+        }
+        
+        .message-content {
+            padding: 12px 15px;
+            border-radius: 20px;
+            max-width: calc(100% - 42px);
+            word-wrap: break-word;
+        }
+        
+        .message.sent .message-content {
+            background: linear-gradient(to right, #405de6, #5851db);
+            color: white;
+            border-top-right-radius: 5px;
+        }
+        
+        .message.received .message-content {
+            background-color: white;
+            color: #333;
+            border-top-left-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+            margin-top: 5px;
+            opacity: 0.7;
+            text-align: right;
+        }
+        
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+        }
+        
+        .chat-input button {
+            background: linear-gradient(135deg, #405de6, #5851db);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .screenshot-area {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .config-panel, .chat-preview {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fab fa-instagram"></i> Gerador de Chat Falso do Instagram</h1>
+            <p>Crie conversas falsas do Instagram para fazer pegadinhas inofensivas com seus amigos</p>
+        </header>
+        
+        <div class="warning">
+            <p><strong>Aviso:</strong> Este gerador não tem nenhuma relação com o Instagram ou Meta. Todo o material gráfico é protegido por direitos autorais. Use apenas para diversão pessoal e pegadinhas inofensivas. Não utilize para fins maliciosos.</p>
+        </div>
+        
+        <div class="app-container">
+            <div class="config-panel">
+                <h2 class="section-title">Configurar Conversa</h2>
+                
+                <div class="form-group">
+                    <label for="friendName">Nome do seu amigo:</label>
+                    <input type="text" id="friendName" placeholder="Digite o nome do seu amigo" value="Amigo(a)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="myName">Seu nome:</label>
+                    <input type="text" id="myName" placeholder="Digite seu nome" value="Você">
+                </div>
+                
+                <div class="form-group">
+                    <label>Foto de perfil do seu amigo:</label>
+                    <div class="profile-pic-upload">
+                        <img id="friendProfilePreview" src="https://i.pravatar.cc/150?img=8" alt="Perfil do amigo" class="profile-preview">
+                        <div>
+                            <input type="file" id="friendProfileUpload" accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('friendProfileUpload').click()">Alterar Foto</button>
+                            <p style="font-size: 0.8rem; margin-top: 5px;">Ou use um avatar padrão</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Sua foto de perfil:</label>
+                    <div class="profile-pic-upload">
+                        <img id="myProfilePreview" src="https://i.pravatar.cc/150?img=5" alt="Seu perfil" class="profile-preview">
+                        <div>
+                            <input type="file" id="myProfileUpload" accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('myProfileUpload').click()">Alterar Foto</button>
+                            <p style="font-size: 0.8rem; margin-top: 5px;">Ou use um avatar padrão</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="conversation">Conversa (uma mensagem por linha, comece com "EU:" ou "AMIGO:"):</label>
+                    <textarea id="conversation" placeholder="EU: Oi, tudo bem? &#10;AMIGO: Tudo sim, e você? &#10;EU: Também estou bem! &#10;AMIGO: Que bom! 😊">EU: Oi, tudo bem? 
+AMIGO: Tudo sim, e você? 
+EU: Também estou bem! 
+AMIGO: Que bom! 😊
+EU: Vamos sair amanhã? 
+AMIGO: Claro! Que horas? 
+EU: Às 19h? 
+AMIGO: Perfeito! 👍
+EU: Levo um presente surpresa para você! 🎁
+AMIGO: Nossa, que fofo! Agora fiquei curioso(a)!</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Emoticons para adicionar à conversa:</label>
+                    <div class="emoji-selector">
+                        <button class="emoji-btn" onclick="addEmoji('😊')">😊</button>
+                        <button class="emoji-btn" onclick="addEmoji('😂')">😂</button>
+                        <button class="emoji-btn" onclick="addEmoji('🤣')">🤣</button>
+                        <button class="emoji-btn" onclick="addEmoji('😍')">😍</button>
+                        <button class="emoji-btn" onclick="addEmoji('😎')">😎</button>
+                        <button class="emoji-btn" onclick="addEmoji('😜')">😜</button>
+                        <button class="emoji-btn" onclick="addEmoji('🤔')">🤔</button>
+                        <button class="emoji-btn" onclick="addEmoji('👍')">👍</button>
+                        <button class="emoji-btn" onclick="addEmoji('👎')">👎</button>
+                        <button class="emoji-btn" onclick="addEmoji('🎉')">🎉</button>
+                        <button class="emoji-btn" onclick="addEmoji('🎁')">🎁</button>
+                        <button class="emoji-btn" onclick="addEmoji('❤️')">❤️</button>
+                        <button class="emoji-btn" onclick="addEmoji('🔥')">🔥</button>
+                        <button class="emoji-btn" onclick="addEmoji('💀')">💀</button>
+                        <button class="emoji-btn" onclick="addEmoji('👀')">👀</button>
+                    </div>
+                </div>
+                
+                <div class="buttons-container">
+                    <button class="btn" onclick="updateChat()">
+                        <i class="fas fa-sync-alt"></i> Atualizar Chat
+                    </button>
+                    <button class="btn btn-secondary" onclick="addNewMessage()">
+                        <i class="fas fa-plus"></i> Adicionar Mensagem
+                    </button>
+                    <button class="btn btn-danger" onclick="resetConversation()">
+                        <i class="fas fa-trash"></i> Limpar Tudo
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-preview">
+                <div class="chat-header">
+                    <img id="chatFriendProfile" src="https://i.pravatar.cc/150?img=8" alt="Perfil do amigo" class="chat-header-img">
+                    <div class="chat-header-info">
+                        <h3 id="chatFriendName">Amigo(a)</h3>
+                        <p>Instagram • Online há 10 min</p>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <!-- As mensagens serão geradas aqui -->
+                </div>
+                
+                <div class="chat-input">
+                    <input type="text" id="newMessageInput" placeholder="Digite uma mensagem...">
+                    <button onclick="addMessageFromInput()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="screenshot-area">
+            <h3 class="section-title">Pronto para a pegadinha?</h3>
+            <p>Depois de personalizar o chat, tire um print da tela e envie para seu amigo!</p>
+            <button class="btn btn-secondary" onclick="alert('Use a ferramenta de print da sua tela (PrintScreen) para capturar o chat e compartilhar com seus amigos!')">
+                <i class="fas fa-camera"></i> Tirar Print do Chat
+            </button>
+            <p style="margin-top: 15px; font-size: 0.9rem;">Dica: Você pode salvar a imagem e compartilhar no WhatsApp, Instagram ou qualquer outra rede social.</p>
+        </div>
+        
+        <footer>
+            <p>⚠️ Este gerador é apenas para entretenimento pessoal. Não possui nenhuma relação com o Instagram/Meta.</p>
+            <p>© 2023 Gerador de Chat Falso - Todos os direitos reservados aos respectivos proprietários.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Elementos do DOM
+        const friendNameInput = document.getElementById('friendName');
+        const myNameInput = document.getElementById('myName');
+        const friendProfileUpload = document.getElementById('friendProfileUpload');
+        const myProfileUpload = document.getElementById('myProfileUpload');
+        const friendProfilePreview = document.getElementById('friendProfilePreview');
+        const myProfilePreview = document.getElementById('myProfilePreview');
+        const chatFriendProfile = document.getElementById('chatFriendProfile');
+        const chatFriendName = document.getElementById('chatFriendName');
+        const conversationInput = document.getElementById('conversation');
+        const chatMessages = document.getElementById('chatMessages');
+        const newMessageInput = document.getElementById('newMessageInput');
+        
+        // Inicializar conversa padrão
+        document.addEventListener('DOMContentLoaded', function() {
+            updateChat();
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            // Atualizar quando os nomes mudarem
+            friendNameInput.addEventListener('input', updateChat);
+            myNameInput.addEventListener('input', updateChat);
+            
+            // Atualizar quando a conversa mudar
+            conversationInput.addEventListener('input', updateChat);
+            
+            // Permitir Enter para adicionar mensagem
+            newMessageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addMessageFromInput();
+                }
+            });
+            
+            // Upload de imagens de perfil
+            friendProfileUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        friendProfilePreview.src = e.target.result;
+                        chatFriendProfile.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            myProfileUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        myProfilePreview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Adicionar emoticon ao textarea
+        function addEmoji(emoji) {
+            const textarea = conversationInput;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const newText = text.substring(0, start) + emoji + text.substring(end);
+            
+            textarea.value = newText;
+            textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
+            
+            updateChat();
+        }
+        
+        // Atualizar o chat com base nas configurações
+        function updateChat() {
+            const friendName = friendNameInput.value || "Amigo(a)";
+            const myName = myNameInput.value || "Você";
+            const conversationText = conversationInput.value;
+            
+            // Atualizar nome no cabeçalho
+            chatFriendName.textContent = friendName;
+            
+            // Limpar mensagens existentes
+            chatMessages.innerHTML = '';
+            
+            // Dividir o texto em linhas
+            const lines = conversationText.split('\n');
+            
+            // Adicionar cada linha como mensagem
+            lines.forEach(line => {
+                if (line.trim() === '') return;
+                
+                // Verificar se a linha começa com "EU:" ou "AMIGO:"
+                const isFromMe = line.toUpperCase().startsWith('EU:');
+                const isFromFriend = line.toUpperCase().startsWith('AMIGO:');
+                
+                if (isFromMe || isFromFriend) {
+                    // Extrair o conteúdo da mensagem (remover o prefixo)
+                    const messageContent = line.substring(line.indexOf(':') + 1).trim();
+                    
+                    if (messageContent) {
+                        addMessageToChat(messageContent, isFromMe, false);
+                    }
+                }
+            });
+            
+            // Adicionar hora atual às mensagens
+            const timeElements = document.querySelectorAll('.message-time');
+            const now = new Date();
+            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            timeElements.forEach(timeEl => {
+                timeEl.textContent = timeString;
+            });
+        }
+        
+        // Adicionar uma nova mensagem ao chat
+        function addMessageToChat(content, isFromMe, animate = true) {
+            const friendName = friendNameInput.value || "Amigo(a)";
+            const myName = myNameInput.value || "Você";
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isFromMe ? 'sent' : 'received'}`;
+            
+            const avatarSrc = isFromMe ? myProfilePreview.src : friendProfilePreview.src;
+            
+            const now = new Date();
+            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            messageDiv.innerHTML = `
+                <img src="${avatarSrc}" alt="Avatar" class="message-avatar">
+                <div>
+                    <div class="message-content">${content}</div>
+                    <div class="message-time">${timeString}</div>
+                </div>
+            `;
+            
+            if (animate) {
+                messageDiv.style.opacity = '0';
+                messageDiv.style.transform = 'translateY(10px)';
+                chatMessages.appendChild(messageDiv);
+                
+                setTimeout(() => {
+                    messageDiv.style.transition = 'opacity 0.3s, transform 0.3s';
+                    messageDiv.style.opacity = '1';
+                    messageDiv.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Scroll para baixo
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 100);
+            } else {
+                chatMessages.appendChild(messageDiv);
+            }
+        }
+        
+        // Adicionar nova mensagem a partir do input
+        function addMessageFromInput() {
+            const message = newMessageInput.value.trim();
+            const isFromMe = true; // Sempre do usuário quando vem do input
+            
+            if (message) {
+                // Adicionar ao chat
+                addMessageToChat(message, isFromMe, true);
+                
+                // Adicionar ao textarea de conversa
+                const prefix = isFromMe ? 'EU:' : 'AMIGO:';
+                const currentConversation = conversationInput.value;
+                conversationInput.value = currentConversation + (currentConversation ? '\n' : '') + prefix + ' ' + message;
+                
+                // Limpar input
+                newMessageInput.value = '';
+            }
+        }
+        
+        // Adicionar uma nova mensagem com um diálogo pré-definido
+        function addNewMessage() {
+            const messages = [
+                "AMIGO: E aí, o que você está fazendo?",
+                "EU: Nada demais, só pensando em você! 😊",
+                "AMIGO: Parei para pensar... Você é mesmo meu melhor amigo! ❤️",
+                "EU: Tenho uma surpresa incrível para te contar!",
+                "AMIGO: Sério? Agora fiquei curioso! Me conta! 👀",
+                "EU: Vamos combinar de nos encontrar amanhã?",
+                "AMIGO: Claro! Às 15h na praça do centro?",
+                "EU: Perfeito! Não se atrase hein! 😜",
+                "AMIGO: Eu atrasar? Nunca! Você que sempre se atrasa! 😂",
+                "EU: Dessa vez vai ser diferente, prometo! 🤞"
+            ];
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            // Adicionar ao textarea
+            const currentConversation = conversationInput.value;
+            conversationInput.value = currentConversation + (currentConversation ? '\n' : '') + randomMessage;
+            
+            // Atualizar o chat
+            updateChat();
+            
+            // Scroll para a nova mensagem
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 100);
+        }
+        
+        // Resetar a conversa
+        function resetConversation() {
+            if (confirm("Tem certeza que quer limpar toda a conversa? Esta ação não pode ser desfeita.")) {
+                conversationInput.value = "EU: Oi, tudo bem? \nAMIGO: Tudo sim, e você?";
+                updateChat();
+            }
+        }
+    </script>
+</body>
+</html>
