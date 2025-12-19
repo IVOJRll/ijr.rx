@@ -1,690 +1,722 @@
+<?php
+/**
+ * SCRIPT DE LIMPEZA DE EMERGÊNCIA VIA URL
+ * 
+ * PERIGO: Remove todos os produtos via API do WordPress/WooCommerce
+ * USE COM EXTREMA CAUTELA!
+ */
+
+// ================= CONFIGURAÇÃO INICIAL =================
+$site_url = 'https://www.nexak.shop/';
+$username = 'usuario_emergencia';
+$password = 'senha_super_forte';
+$action = 'list';
+
+// ================= FUNÇÕES PRINCIPAIS =================
+
+function conectarAPI($site_url, $username, $password) {
+    $credenciais = base64_encode($username . ':' . $password);
+    
+    $headers = [
+        'Authorization: Basic ' . $credenciais,
+        'Content-Type: application/json',
+        'User-Agent: Script-Emergencia/1.0'
+    ];
+    
+    return [
+        'site_url' => $site_url,
+        'headers' => $headers
+    ];
+}
+
+function listarProdutos($conexao) {
+    $url = $conexao['site_url'] . '/wp-json/wc/v3/products?per_page=100';
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $conexao['headers']);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($http_code == 200) {
+        return json_decode($response, true);
+    } else {
+        return [
+            'error' => true,
+            'code' => $http_code,
+            'message' => $response
+        ];
+    }
+}
+
+function deletarProduto($conexao, $product_id, $force = true) {
+    $url = $conexao['site_url'] . "/wp-json/wc/v3/products/{$product_id}";
+    
+    if ($force) {
+        $url .= '?force=true';
+    }
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $conexao['headers']);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($http_code == 200) {
+        $result = json_decode($response, true);
+        return [
+            'success' => true,
+            'id' => $product_id,
+            'name' => isset($result['name']) ? $result['name'] : 'Produto ' . $product_id
+        ];
+    } else {
+        return [
+            'success' => false,
+            'id' => $product_id,
+            'error' => "Código HTTP: $http_code",
+            'response' => $response
+        ];
+    }
+}
+
+function deletarTodosProdutos($conexao) {
+    $resultado = [
+        'total' => 0,
+        'deletados' => 0,
+        'erros' => 0,
+        'produtos' => []
+    ];
+    
+    $produtos = listarProdutos($conexao);
+    
+    if (isset($produtos['error'])) {
+        $resultado['erro_global'] = $produtos;
+        return $resultado;
+    }
+    
+    if (!$produtos || empty($produtos)) {
+        return $resultado;
+    }
+    
+    $resultado['total'] = count($produtos);
+    
+    foreach ($produtos as $produto) {
+        $id = $produto['id'];
+        $nome = $produto['name'];
+        
+        $deletar = deletarProduto($conexao, $id);
+        
+        if ($deletar['success']) {
+            $resultado['deletados']++;
+            $resultado['produtos'][] = [
+                'id' => $id,
+                'nome' => $nome,
+                'status' => 'deletado'
+            ];
+        } else {
+            $resultado['erros']++;
+            $resultado['produtos'][] = [
+                'id' => $id,
+                'nome' => $nome,
+                'status' => 'erro',
+                'erro' => $deletar['error']
+            ];
+        }
+        
+        usleep(300000);
+    }
+    
+    return $resultado;
+}
+
+function verificarConexao($site_url, $username, $password) {
+    $conexao = conectarAPI($site_url, $username, $password);
+    $test_url = $site_url . '/wp-json/wc/v3/products?per_page=1';
+    
+    $ch = curl_init($test_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $conexao['headers']);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    return [
+        'sucesso' => $http_code == 200,
+        'codigo' => $http_code,
+        'resposta' => $response
+    ];
+}
+
+// ================= PROCESSAMENTO DO FORMULÁRIO =================
+
+$mensagem = '';
+$resultado = null;
+$conexao_valida = false;
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $site_url = rtrim($_POST['site_url'], '/');
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    $action = $_POST['action'];
+    
+    if (isset($_POST['testar'])) {
+        $teste = verificarConexao($site_url, $username, $password);
+        
+        if ($teste['sucesso']) {
+            $mensagem = "✅ Conexão bem-sucedida! API REST está funcionando.";
+            $conexao_valida = true;
+        } else {
+            $mensagem = "❌ Falha na conexão! Código HTTP: " . $teste['codigo'];
+            
+            if (strpos($teste['resposta'], 'rest_cannot_access') !== false) {
+                $mensagem .= "\n⛔ Acesso negado. Verifique as permissões do usuário.";
+            } elseif (strpos($teste['resposta'], 'woocommerce_rest_cannot_view') !== false) {
+                $mensagem .= "\n⚠️ WooCommerce não encontrado ou API desativada.";
+            }
+        }
+    }
+    
+    if (isset($_POST['executar'])) {
+        if ($action == 'list') {
+            $conexao = conectarAPI($site_url, $username, $password);
+            $produtos = listarProdutos($conexao);
+            
+            if (isset($produtos['error'])) {
+                $resultado = "❌ Erro ao listar produtos: Código " . $produtos['code'];
+            } else {
+                $resultado = "📋 PRODUTOS ENCONTRADOS: " . count($produtos) . "\n\n";
+                foreach ($produtos as $produto) {
+                    $resultado .= "ID: " . $produto['id'] . "\n";
+                    $resultado .= "Nome: " . htmlspecialchars($produto['name']) . "\n";
+                    $resultado .= "Status: " . $produto['status'] . "\n";
+                    $resultado .= "Preço: R$ " . ($produto['price'] ?? '0.00') . "\n";
+                    $resultado .= "Estoque: " . ($produto['stock_quantity'] ?? 'N/A') . "\n";
+                    $resultado .= "---\n";
+                }
+            }
+        }
+        
+        if ($action == 'delete') {
+            if (isset($_POST['confirmacao']) && $_POST['confirmacao'] == 'APAGAR-TUDO') {
+                $conexao = conectarAPI($site_url, $username, $password);
+                $resultado_delete = deletarTodosProdutos($conexao);
+                
+                if (isset($resultado_delete['erro_global'])) {
+                    $resultado = "❌ ERRO GLOBAL: Código " . $resultado_delete['erro_global']['code'] . "\n";
+                    $resultado .= "Mensagem: " . $resultado_delete['erro_global']['message'];
+                } else {
+                    $resultado = "✅ OPERAÇÃO CONCLUÍDA!\n";
+                    $resultado .= "================================\n";
+                    $resultado .= "Total encontrado: " . $resultado_delete['total'] . "\n";
+                    $resultado .= "Produtos deletados: " . $resultado_delete['deletados'] . "\n";
+                    $resultado .= "Erros: " . $resultado_delete['erros'] . "\n\n";
+                    
+                    if (!empty($resultado_delete['produtos'])) {
+                        $resultado .= "DETALHES:\n";
+                        foreach ($resultado_delete['produtos'] as $prod) {
+                            $status = ($prod['status'] == 'deletado') ? '✅' : '❌';
+                            $resultado .= "$status ID {$prod['id']}: {$prod['nome']}";
+                            if (isset($prod['erro'])) {
+                                $resultado .= " - ERRO: {$prod['erro']}";
+                            }
+                            $resultado .= "\n";
+                        }
+                    }
+                }
+            } else {
+                $resultado = "❌ Ação cancelada! Confirmação não fornecida ou incorreta.";
+            }
+        }
+    }
+}
+
+// Se houve teste bem-sucedido, manter a conexão como válida
+if (isset($teste) && $teste['sucesso']) {
+    $conexao_valida = true;
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Chat Falso do Instagram</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>🚨 Script de Limpeza de Emergência</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
-            color: #333;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #333;
         }
-        
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        header {
-            text-align: center;
-            color: white;
-            padding: 20px;
-            background-color: rgba(0, 0, 0, 0.2);
+            background: white;
             border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        header h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-        }
-        
-        header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .warning {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-left: 5px solid #e1306c;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-        
-        .app-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        
-        .config-panel {
-            flex: 1;
-            min-width: 300px;
-            background-color: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .chat-preview {
-            flex: 2;
-            min-width: 400px;
-            background-color: white;
-            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            display: flex;
-            flex-direction: column;
+            animation: slideIn 0.5s ease;
         }
-        
-        .section-title {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            color: #405de6;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 8px;
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '⚠️';
+            position: absolute;
+            font-size: 200px;
+            opacity: 0.1;
+            right: -50px;
+            top: -50px;
+        }
+        .header h1 { 
+            font-size: 28px; 
+            margin-bottom: 10px; 
+            position: relative;
+            z-index: 1;
+        }
+        .header .subtitle { 
+            opacity: 0.9; 
+            font-size: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        .content {
+            padding: 40px;
+        }
+        .alert-box {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 5px solid;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        .alert-danger {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .alert-success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
-        
         label {
             display: block;
+            font-weight: bold;
             margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
+            color: #2c3e50;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        
-        input[type="text"], textarea {
+        input[type="text"], input[type="password"], select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 1rem;
-            transition: border 0.3s;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: #f8f9fa;
         }
-        
-        input[type="text"]:focus, textarea:focus {
-            border-color: #405de6;
+        input:focus, select:focus {
+            border-color: #667eea;
             outline: none;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        
-        textarea {
-            min-height: 120px;
-            resize: vertical;
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            text-decoration: none;
+            min-width: 150px;
         }
-        
-        .emoji-selector {
+        .btn i { margin-right: 8px; }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(102, 126, 234, 0.3);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(220, 53, 69, 0.3);
+        }
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
+            margin: 25px 0;
+        }
+        .result-box {
+            margin-top: 30px;
+            padding: 25px;
+            background: #2c3e50;
+            border-radius: 10px;
+            color: #ecf0f1;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            border: 1px solid #34495e;
+        }
+        .step {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .step h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .step-number {
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border: 2px dashed #dee2e6;
+        }
+        .instructions ol {
+            margin-left: 20px;
             margin-top: 10px;
         }
-        
-        .emoji-btn {
-            font-size: 1.5rem;
-            background: none;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
+        .instructions li {
+            margin-bottom: 10px;
+            padding-left: 10px;
         }
-        
-        .emoji-btn:hover {
-            background-color: #f0f0f0;
-            transform: scale(1.1);
-        }
-        
-        .profile-pic-upload {
-            display: flex;
+        .status-indicator {
+            display: inline-flex;
             align-items: center;
-            gap: 15px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 15px;
         }
-        
-        .profile-preview {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #e1306c;
-        }
-        
-        .btn {
-            background-color: #405de6;
+        .status-connected {
+            background: #28a745;
             color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.3s;
         }
-        
-        .btn:hover {
-            background-color: #2a48d6;
-            transform: translateY(-2px);
-        }
-        
-        .btn-secondary {
-            background-color: #833ab4;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #6a2d93;
-        }
-        
-        .btn-danger {
-            background-color: #e1306c;
-        }
-        
-        .btn-danger:hover {
-            background-color: #c91e56;
-        }
-        
-        .buttons-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        /* Estilo do chat do Instagram */
-        .chat-header {
-            background: linear-gradient(135deg, #405de6, #5851db, #833ab4);
+        .status-disconnected {
+            background: #dc3545;
             color: white;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
         }
-        
-        .chat-header-img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
+        .progress-container {
+            width: 100%;
+            background: #ecf0f1;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            height: 20px;
         }
-        
-        .chat-header-info h3 {
-            font-size: 1.2rem;
-            margin-bottom: 3px;
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            width: 0%;
+            transition: width 1s ease;
+            border-radius: 10px;
         }
-        
-        .chat-header-info p {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-        
-        .chat-messages {
-            flex: 1;
+        .confirm-box {
+            display: none;
+            background: #fff3cd;
             padding: 20px;
-            background-color: #fafafa;
-            overflow-y: auto;
-            max-height: 500px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #ffc107;
         }
-        
-        .message {
-            display: flex;
-            margin-bottom: 15px;
-            max-width: 80%;
+        .confirm-box.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
         }
-        
-        .message.sent {
-            margin-left: auto;
-            flex-direction: row-reverse;
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-        
-        .message-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-top: auto;
-        }
-        
-        .message.sent .message-avatar {
+        .product-count {
+            background: #3498db;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
             margin-left: 10px;
         }
-        
-        .message.received .message-avatar {
-            margin-right: 10px;
-        }
-        
-        .message-content {
-            padding: 12px 15px;
-            border-radius: 20px;
-            max-width: calc(100% - 42px);
-            word-wrap: break-word;
-        }
-        
-        .message.sent .message-content {
-            background: linear-gradient(to right, #405de6, #5851db);
-            color: white;
-            border-top-right-radius: 5px;
-        }
-        
-        .message.received .message-content {
-            background-color: white;
-            color: #333;
-            border-top-left-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .message-time {
-            font-size: 0.7rem;
-            margin-top: 5px;
-            opacity: 0.7;
-            text-align: right;
-        }
-        
-        .chat-input {
-            padding: 15px;
-            border-top: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .chat-input input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-        }
-        
-        .chat-input button {
-            background: linear-gradient(135deg, #405de6, #5851db);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
-        
-        .screenshot-area {
-            text-align: center;
-            margin-top: 20px;
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
-        }
-        
-        footer {
-            text-align: center;
-            color: white;
-            padding: 20px;
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-top: 20px;
-        }
-        
         @media (max-width: 768px) {
-            .app-container {
-                flex-direction: column;
-            }
-            
-            .config-panel, .chat-preview {
-                min-width: 100%;
-            }
+            .container { margin: 10px; }
+            .content { padding: 20px; }
+            .btn-group { flex-direction: column; }
+            .btn { width: 100%; margin-bottom: 10px; }
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1><i class="fab fa-instagram"></i> Gerador de Chat Falso do Instagram</h1>
-            <p>Crie conversas falsas do Instagram para fazer pegadinhas inofensivas com seus amigos</p>
-        </header>
-        
-        <div class="warning">
-            <p><strong>Aviso:</strong> Este gerador não tem nenhuma relação com o Instagram ou Meta. Todo o material gráfico é protegido por direitos autorais. Use apenas para diversão pessoal e pegadinhas inofensivas. Não utilize para fins maliciosos.</p>
+        <div class="header">
+            <h1><i class="fas fa-fire"></i> Script de Limpeza de Emergência</h1>
+            <div class="subtitle">Remoção automática de produtos via API REST</div>
+            <?php if ($conexao_valida): ?>
+                <div class="status-indicator status-connected">
+                    <i class="fas fa-plug"></i> Conectado
+                </div>
+            <?php endif; ?>
         </div>
         
-        <div class="app-container">
-            <div class="config-panel">
-                <h2 class="section-title">Configurar Conversa</h2>
-                
-                <div class="form-group">
-                    <label for="friendName">Nome do seu amigo:</label>
-                    <input type="text" id="friendName" placeholder="Digite o nome do seu amigo" value="Amigo(a)">
-                </div>
-                
-                <div class="form-group">
-                    <label for="myName">Seu nome:</label>
-                    <input type="text" id="myName" placeholder="Digite seu nome" value="Você">
-                </div>
-                
-                <div class="form-group">
-                    <label>Foto de perfil do seu amigo:</label>
-                    <div class="profile-pic-upload">
-                        <img id="friendProfilePreview" src="https://i.pravatar.cc/150?img=8" alt="Perfil do amigo" class="profile-preview">
-                        <div>
-                            <input type="file" id="friendProfileUpload" accept="image/*" style="display: none;">
-                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('friendProfileUpload').click()">Alterar Foto</button>
-                            <p style="font-size: 0.8rem; margin-top: 5px;">Ou use um avatar padrão</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Sua foto de perfil:</label>
-                    <div class="profile-pic-upload">
-                        <img id="myProfilePreview" src="https://i.pravatar.cc/150?img=5" alt="Seu perfil" class="profile-preview">
-                        <div>
-                            <input type="file" id="myProfileUpload" accept="image/*" style="display: none;">
-                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('myProfileUpload').click()">Alterar Foto</button>
-                            <p style="font-size: 0.8rem; margin-top: 5px;">Ou use um avatar padrão</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="conversation">Conversa (uma mensagem por linha, comece com "EU:" ou "AMIGO:"):</label>
-                    <textarea id="conversation" placeholder="EU: Oi, tudo bem? &#10;AMIGO: Tudo sim, e você? &#10;EU: Também estou bem! &#10;AMIGO: Que bom! 😊">EU: Oi, tudo bem? 
-AMIGO: Tudo sim, e você? 
-EU: Também estou bem! 
-AMIGO: Que bom! 😊
-EU: Vamos sair amanhã? 
-AMIGO: Claro! Que horas? 
-EU: Às 19h? 
-AMIGO: Perfeito! 👍
-EU: Levo um presente surpresa para você! 🎁
-AMIGO: Nossa, que fofo! Agora fiquei curioso(a)!</textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>Emoticons para adicionar à conversa:</label>
-                    <div class="emoji-selector">
-                        <button class="emoji-btn" onclick="addEmoji('😊')">😊</button>
-                        <button class="emoji-btn" onclick="addEmoji('😂')">😂</button>
-                        <button class="emoji-btn" onclick="addEmoji('🤣')">🤣</button>
-                        <button class="emoji-btn" onclick="addEmoji('😍')">😍</button>
-                        <button class="emoji-btn" onclick="addEmoji('😎')">😎</button>
-                        <button class="emoji-btn" onclick="addEmoji('😜')">😜</button>
-                        <button class="emoji-btn" onclick="addEmoji('🤔')">🤔</button>
-                        <button class="emoji-btn" onclick="addEmoji('👍')">👍</button>
-                        <button class="emoji-btn" onclick="addEmoji('👎')">👎</button>
-                        <button class="emoji-btn" onclick="addEmoji('🎉')">🎉</button>
-                        <button class="emoji-btn" onclick="addEmoji('🎁')">🎁</button>
-                        <button class="emoji-btn" onclick="addEmoji('❤️')">❤️</button>
-                        <button class="emoji-btn" onclick="addEmoji('🔥')">🔥</button>
-                        <button class="emoji-btn" onclick="addEmoji('💀')">💀</button>
-                        <button class="emoji-btn" onclick="addEmoji('👀')">👀</button>
-                    </div>
-                </div>
-                
-                <div class="buttons-container">
-                    <button class="btn" onclick="updateChat()">
-                        <i class="fas fa-sync-alt"></i> Atualizar Chat
-                    </button>
-                    <button class="btn btn-secondary" onclick="addNewMessage()">
-                        <i class="fas fa-plus"></i> Adicionar Mensagem
-                    </button>
-                    <button class="btn btn-danger" onclick="resetConversation()">
-                        <i class="fas fa-trash"></i> Limpar Tudo
-                    </button>
-                </div>
+        <div class="content">
+            <div class="alert-box alert-danger">
+                <h3><i class="fas fa-exclamation-triangle"></i> ALERTA CRÍTICO DE SEGURANÇA</h3>
+                <p>Este script irá REMOVER PERMANENTEMENTE todos os produtos do seu site WooCommerce.</p>
+                <p><strong><i class="fas fa-database"></i> FAÇA BACKUP COMPLETO DO BANCO DE DADOS ANTES DE CONTINUAR!</strong></p>
             </div>
             
-            <div class="chat-preview">
-                <div class="chat-header">
-                    <img id="chatFriendProfile" src="https://i.pravatar.cc/150?img=8" alt="Perfil do amigo" class="chat-header-img">
-                    <div class="chat-header-info">
-                        <h3 id="chatFriendName">Amigo(a)</h3>
-                        <p>Instagram • Online há 10 min</p>
-                    </div>
-                </div>
-                
-                <div class="chat-messages" id="chatMessages">
-                    <!-- As mensagens serão geradas aqui -->
-                </div>
-                
-                <div class="chat-input">
-                    <input type="text" id="newMessageInput" placeholder="Digite uma mensagem...">
-                    <button onclick="addMessageFromInput()">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
+            <div class="step">
+                <h3><span class="step-number">1</span> Preparar o Site</h3>
+                <p>Crie um usuário temporário no WordPress com perfil <strong>Administrador</strong> e permissões de escrita na API REST.</p>
             </div>
-        </div>
-        
-        <div class="screenshot-area">
-            <h3 class="section-title">Pronto para a pegadinha?</h3>
-            <p>Depois de personalizar o chat, tire um print da tela e envie para seu amigo!</p>
-            <button class="btn btn-secondary" onclick="alert('Use a ferramenta de print da sua tela (PrintScreen) para capturar o chat e compartilhar com seus amigos!')">
-                <i class="fas fa-camera"></i> Tirar Print do Chat
-            </button>
-            <p style="margin-top: 15px; font-size: 0.9rem;">Dica: Você pode salvar a imagem e compartilhar no WhatsApp, Instagram ou qualquer outra rede social.</p>
-        </div>
-        
-        <footer>
-            <p>⚠️ Este gerador é apenas para entretenimento pessoal. Não possui nenhuma relação com o Instagram/Meta.</p>
-            <p>© 2023 Gerador de Chat Falso - Todos os direitos reservados aos respectivos proprietários.</p>
-        </footer>
-    </div>
-
-    <script>
-        // Elementos do DOM
-        const friendNameInput = document.getElementById('friendName');
-        const myNameInput = document.getElementById('myName');
-        const friendProfileUpload = document.getElementById('friendProfileUpload');
-        const myProfileUpload = document.getElementById('myProfileUpload');
-        const friendProfilePreview = document.getElementById('friendProfilePreview');
-        const myProfilePreview = document.getElementById('myProfilePreview');
-        const chatFriendProfile = document.getElementById('chatFriendProfile');
-        const chatFriendName = document.getElementById('chatFriendName');
-        const conversationInput = document.getElementById('conversation');
-        const chatMessages = document.getElementById('chatMessages');
-        const newMessageInput = document.getElementById('newMessageInput');
-        
-        // Inicializar conversa padrão
-        document.addEventListener('DOMContentLoaded', function() {
-            updateChat();
-            setupEventListeners();
-        });
-        
-        function setupEventListeners() {
-            // Atualizar quando os nomes mudarem
-            friendNameInput.addEventListener('input', updateChat);
-            myNameInput.addEventListener('input', updateChat);
             
-            // Atualizar quando a conversa mudar
-            conversationInput.addEventListener('input', updateChat);
+            <div class="step">
+                <h3><span class="step-number">2</span> Testar Conexão</h3>
+                <p>Verifique se a API REST está ativa acessando: 
+                    <code style="background: #e9ecef; padding: 5px 10px; border-radius: 4px; margin-left: 10px;">
+                        <?php echo htmlspecialchars($site_url); ?>/wp-json/wc/v3
+                    </code>
+                </p>
+            </div>
             
-            // Permitir Enter para adicionar mensagem
-            newMessageInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    addMessageFromInput();
-                }
-            });
-            
-            // Upload de imagens de perfil
-            friendProfileUpload.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        friendProfilePreview.src = e.target.result;
-                        chatFriendProfile.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            myProfileUpload.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        myProfilePreview.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-        
-        // Adicionar emoticon ao textarea
-        function addEmoji(emoji) {
-            const textarea = conversationInput;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const text = textarea.value;
-            const newText = text.substring(0, start) + emoji + text.substring(end);
-            
-            textarea.value = newText;
-            textarea.focus();
-            textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
-            
-            updateChat();
-        }
-        
-        // Atualizar o chat com base nas configurações
-        function updateChat() {
-            const friendName = friendNameInput.value || "Amigo(a)";
-            const myName = myNameInput.value || "Você";
-            const conversationText = conversationInput.value;
-            
-            // Atualizar nome no cabeçalho
-            chatFriendName.textContent = friendName;
-            
-            // Limpar mensagens existentes
-            chatMessages.innerHTML = '';
-            
-            // Dividir o texto em linhas
-            const lines = conversationText.split('\n');
-            
-            // Adicionar cada linha como mensagem
-            lines.forEach(line => {
-                if (line.trim() === '') return;
+            <form method="POST" id="configForm">
+                <div class="form-group">
+                    <label for="site_url"><i class="fas fa-link"></i> URL do Seu Site</label>
+                    <input type="text" id="site_url" name="site_url" 
+                           value="<?php echo htmlspecialchars($site_url); ?>" 
+                           placeholder="https://seusite.com" required>
+                </div>
                 
-                // Verificar se a linha começa com "EU:" ou "AMIGO:"
-                const isFromMe = line.toUpperCase().startsWith('EU:');
-                const isFromFriend = line.toUpperCase().startsWith('AMIGO:');
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user"></i> Usuário da API</label>
+                    <input type="text" id="username" name="username" 
+                           value="<?php echo htmlspecialchars($username); ?>" 
+                           placeholder="usuario_emergencia" required>
+                </div>
                 
-                if (isFromMe || isFromFriend) {
-                    // Extrair o conteúdo da mensagem (remover o prefixo)
-                    const messageContent = line.substring(line.indexOf(':') + 1).trim();
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Senha da API</label>
+                    <input type="password" id="password" name="password" 
+                           value="<?php echo htmlspecialchars($password); ?>" 
+                           placeholder="senha_forte" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="action"><i class="fas fa-bullseye"></i> Ação a Executar</label>
+                    <select id="action" name="action" onchange="toggleConfirmBox()">
+                        <option value="list" <?php echo ($action == 'list') ? 'selected' : ''; ?>>
+                            <i class="fas fa-list"></i> Listar Produtos (Somente Visualizar)
+                        </option>
+                        <option value="delete" <?php echo ($action == 'delete') ? 'selected' : ''; ?>>
+                            <i class="fas fa-trash"></i> Deletar TODOS os Produtos
+                        </option>
+                    </select>
+                </div>
+                
+                <div id="confirmBox" class="confirm-box">
+                    <h4><i class="fas fa-shield-alt"></i> Confirmação de Segurança</h4>
+                    <p>Para deletar todos os produtos, digite <strong>APAGAR-TUDO</strong> no campo abaixo:</p>
+                    <input type="text" id="confirmacao" name="confirmacao" 
+                           placeholder="Digite APAGAR-TUDO aqui" style="width: 100%; margin: 10px 0;">
+                </div>
+                
+                <?php if (!empty($mensagem)): ?>
+                    <div class="alert-box <?php echo strpos($mensagem, '✅') !== false ? 'alert-success' : 'alert-danger'; ?>">
+                        <?php echo nl2br(htmlspecialchars($mensagem)); ?>
+                    </div>
+                <?php endif; ?>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary" name="testar">
+                        <i class="fas fa-plug"></i> Testar Conexão
+                    </button>
                     
-                    if (messageContent) {
-                        addMessageToChat(messageContent, isFromMe, false);
+                    <button type="submit" class="btn btn-danger" name="executar" id="executarBtn" 
+                            <?php echo !$conexao_valida ? 'disabled' : ''; ?>>
+                        <i class="fas fa-bolt"></i> Executar Ação
+                    </button>
+                    
+                    <button type="button" class="btn" onclick="limparFormulario()" style="background: #6c757d; color: white;">
+                        <i class="fas fa-eraser"></i> Limpar
+                    </button>
+                </div>
+            </form>
+            
+            <?php if (!empty($resultado)): ?>
+                <div class="result-box">
+                    <h4><i class="fas fa-clipboard-list"></i> Resultado da Operação:</h4>
+                    <div style="margin-top: 15px;">
+                        <?php echo nl2br(htmlspecialchars($resultado)); ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> Instruções Importantes:</h3>
+                <ol>
+                    <li><strong>Crie um usuário temporário</strong> no WordPress → Usuários → Adicionar Novo</li>
+                    <li><strong>Atribua perfil Administrador</strong> ao novo usuário</li>
+                    <li><strong>Use uma senha forte</strong> e anote as credenciais</li>
+                    <li><strong>Teste a conexão</strong> antes de executar qualquer ação</li>
+                    <li><strong>Faça backup completo</strong> antes de deletar produtos</li>
+                    <li><strong>Remova este script</strong> e o usuário temporário após o uso</li>
+                </ol>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 5px;">
+                    <h4><i class="fas fa-tools"></i> Solução de Problemas:</h4>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li><strong>Erro 401:</strong> Credenciais inválidas ou usuário sem permissão</li>
+                        <li><strong>Erro 404:</strong> API REST não encontrada (WooCommerce pode não estar instalado)</li>
+                        <li><strong>Erro 403:</strong> Acesso negado (verifique permissões do usuário)</li>
+                        <li><strong>Timeout:</strong> Servidor não responde (verifique URL e servidor)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleConfirmBox() {
+            const action = document.getElementById('action').value;
+            const confirmBox = document.getElementById('confirmBox');
+            
+            if (action === 'delete') {
+                confirmBox.classList.add('show');
+            } else {
+                confirmBox.classList.remove('show');
+            }
+        }
+        
+        function limparFormulario() {
+            if (confirm('Deseja limpar todos os campos?')) {
+                document.getElementById('configForm').reset();
+                document.getElementById('confirmBox').classList.remove('show');
+                document.getElementById('executarBtn').disabled = true;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleConfirmBox();
+            
+            document.querySelector('form').addEventListener('submit', function(e) {
+                const action = document.getElementById('action').value;
+                const executarBtn = e.submitter;
+                
+                if (executarBtn.name === 'executar' && action === 'delete') {
+                    const confirmacao = document.getElementById('confirmacao').value;
+                    
+                    if (confirmacao !== 'APAGAR-TUDO') {
+                        e.preventDefault();
+                        alert('❌ Confirmação necessária! Digite "APAGAR-TUDO" no campo de confirmação.');
+                        document.getElementById('confirmacao').focus();
+                        return false;
+                    }
+                    
+                    if (!confirm('⚠️ ATENÇÃO FINAL!\n\nEsta ação irá REMOVER TODOS OS PRODUTOS permanentemente.\n\nTem certeza ABSOLUTA que deseja continuar?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Mostrar barra de progresso
+                    const resultBox = document.querySelector('.result-box');
+                    if (resultBox) {
+                        resultBox.innerHTML = '<h4><i class="fas fa-spinner fa-spin"></i> Processando... Aguarde...</h4>';
+                        resultBox.style.display = 'block';
                     }
                 }
             });
-            
-            // Adicionar hora atual às mensagens
-            const timeElements = document.querySelectorAll('.message-time');
-            const now = new Date();
-            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            timeElements.forEach(timeEl => {
-                timeEl.textContent = timeString;
-            });
-        }
+        });
         
-        // Adicionar uma nova mensagem ao chat
-        function addMessageToChat(content, isFromMe, animate = true) {
-            const friendName = friendNameInput.value || "Amigo(a)";
-            const myName = myNameInput.value || "Você";
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isFromMe ? 'sent' : 'received'}`;
-            
-            const avatarSrc = isFromMe ? myProfilePreview.src : friendProfilePreview.src;
-            
-            const now = new Date();
-            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            
-            messageDiv.innerHTML = `
-                <img src="${avatarSrc}" alt="Avatar" class="message-avatar">
-                <div>
-                    <div class="message-content">${content}</div>
-                    <div class="message-time">${timeString}</div>
-                </div>
-            `;
-            
-            if (animate) {
-                messageDiv.style.opacity = '0';
-                messageDiv.style.transform = 'translateY(10px)';
-                chatMessages.appendChild(messageDiv);
-                
-                setTimeout(() => {
-                    messageDiv.style.transition = 'opacity 0.3s, transform 0.3s';
-                    messageDiv.style.opacity = '1';
-                    messageDiv.style.transform = 'translateY(0)';
-                }, 10);
-                
-                // Scroll para baixo
-                setTimeout(() => {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }, 100);
-            } else {
-                chatMessages.appendChild(messageDiv);
-            }
-        }
-        
-        // Adicionar nova mensagem a partir do input
-        function addMessageFromInput() {
-            const message = newMessageInput.value.trim();
-            const isFromMe = true; // Sempre do usuário quando vem do input
-            
-            if (message) {
-                // Adicionar ao chat
-                addMessageToChat(message, isFromMe, true);
-                
-                // Adicionar ao textarea de conversa
-                const prefix = isFromMe ? 'EU:' : 'AMIGO:';
-                const currentConversation = conversationInput.value;
-                conversationInput.value = currentConversation + (currentConversation ? '\n' : '') + prefix + ' ' + message;
-                
-                // Limpar input
-                newMessageInput.value = '';
-            }
-        }
-        
-        // Adicionar uma nova mensagem com um diálogo pré-definido
-        function addNewMessage() {
-            const messages = [
-                "AMIGO: E aí, o que você está fazendo?",
-                "EU: Nada demais, só pensando em você! 😊",
-                "AMIGO: Parei para pensar... Você é mesmo meu melhor amigo! ❤️",
-                "EU: Tenho uma surpresa incrível para te contar!",
-                "AMIGO: Sério? Agora fiquei curioso! Me conta! 👀",
-                "EU: Vamos combinar de nos encontrar amanhã?",
-                "AMIGO: Claro! Às 15h na praça do centro?",
-                "EU: Perfeito! Não se atrase hein! 😜",
-                "AMIGO: Eu atrasar? Nunca! Você que sempre se atrasa! 😂",
-                "EU: Dessa vez vai ser diferente, prometo! 🤞"
-            ];
-            
-            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-            
-            // Adicionar ao textarea
-            const currentConversation = conversationInput.value;
-            conversationInput.value = currentConversation + (currentConversation ? '\n' : '') + randomMessage;
-            
-            // Atualizar o chat
-            updateChat();
-            
-            // Scroll para a nova mensagem
-            setTimeout(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 100);
-        }
-        
-        // Resetar a conversa
-        function resetConversation() {
-            if (confirm("Tem certeza que quer limpar toda a conversa? Esta ação não pode ser desfeita.")) {
-                conversationInput.value = "EU: Oi, tudo bem? \nAMIGO: Tudo sim, e você?";
-                updateChat();
-            }
-        }
+        <?php if ($conexao_valida): ?>
+            document.getElementById('executarBtn').disabled = false;
+        <?php endif; ?>
     </script>
 </body>
 </html>
