@@ -246,7 +246,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🤖 Gerador de Scripts IA</h1>
+        <h1>🤖 Gerador de Scripts ijr.rx</h1>
         <p class="subtitle">Descreva o que precisa → Receba o código pronto</p>
         
         <div class="api-key-area">
@@ -593,3 +593,4 @@ Interface colorida e responsiva.`
     </script>
 </body>
 </html>
+
