@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA Geradora de Scripts - Groq API</title>
+    <title>Gerador de Scripts IA - Simples</title>
     <style>
         * {
             box-sizing: border-box;
@@ -12,674 +12,583 @@
         }
         
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #121212; 
-            color: #f5f5f5;
+            font-family: 'Arial', sans-serif; 
+            background: #1a1a1a; 
+            color: #ffffff;
             padding: 20px;
-            line-height: 1.6;
+            min-height: 100vh;
         }
         
-        .chat-container { 
-            max-width: 800px; 
-            margin: 40px auto; 
-            border: 1px solid #333; 
-            padding: 25px; 
-            border-radius: 12px; 
-            background: #1e1e1e;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
         
-        h2 {
-            color: #4fc3f7;
-            margin-bottom: 15px;
+        h1 {
+            color: #4CAF50;
             text-align: center;
-            font-size: 28px;
+            margin-bottom: 10px;
         }
         
         .subtitle {
             text-align: center;
             color: #aaa;
-            margin-bottom: 25px;
-            font-size: 14px;
+            margin-bottom: 30px;
         }
         
-        .messages { 
-            height: 400px; 
-            overflow-y: auto; 
-            border: 1px solid #444; 
-            padding: 15px; 
-            margin-bottom: 20px; 
-            background: #000; 
+        .api-key-area {
+            background: #333;
+            padding: 20px;
             border-radius: 8px;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            margin-bottom: 20px;
         }
         
-        .messages::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .messages::-webkit-scrollbar-track {
-            background: #1a1a1a;
-        }
-        
-        .messages::-webkit-scrollbar-thumb {
-            background: #4caf50;
-            border-radius: 4px;
-        }
-        
-        .msg { 
-            margin-bottom: 15px; 
-            padding-bottom: 15px;
-            border-bottom: 1px solid #2a2a2a;
-        }
-        
-        .msg:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-        
-        .user { 
-            color: #4fc3f7; 
-        }
-        
-        .ai { 
-            color: #a5d6a7; 
-            white-space: pre-wrap;
-        }
-        
-        .input-area { 
-            display: flex; 
-            gap: 12px;
-            align-items: flex-end;
-        }
-        
-        textarea { 
-            flex: 1; 
-            min-height: 80px;
-            max-height: 200px;
-            resize: vertical; 
+        .api-key-input {
+            width: 100%;
             padding: 12px;
-            background: #252525;
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
+            background: #444;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .info {
+            background: #2c5282;
+            color: #b3d4fc;
+            padding: 10px;
+            border-radius: 5px;
             font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .info a {
+            color: #90cdf4;
+            text-decoration: none;
+        }
+        
+        .info a:hover {
+            text-decoration: underline;
+        }
+        
+        .chat-box {
+            background: #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+        
+        .user-message {
+            background: #2c5282;
+            border-left: 4px solid #4299e1;
+        }
+        
+        .ai-message {
+            background: #22543d;
+            border-left: 4px solid #48bb78;
+            white-space: pre-wrap;
+            font-family: 'Consolas', monospace;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        
+        textarea {
+            flex: 1;
+            padding: 15px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
         }
         
         textarea:focus {
             outline: none;
-            border-color: #4fc3f7;
+            border-color: #4CAF50;
         }
         
-        textarea::placeholder {
-            color: #888;
-        }
-        
-        button { 
-            padding: 12px 20px; 
-            cursor: pointer; 
-            background: linear-gradient(135deg, #4caf50, #45a049);
-            color: #fff; 
-            border: none; 
-            border-radius: 6px;
+        button {
+            padding: 15px 25px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
             font-weight: bold;
-            transition: all 0.3s ease;
-            height: 44px;
+            cursor: pointer;
+            transition: background 0.3s;
         }
         
         button:hover:not(:disabled) {
-            background: linear-gradient(135deg, #45a049, #3d8b40);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+            background: #45a049;
         }
         
-        button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-        
-        button:disabled { 
-            background: #555; 
+        button:disabled {
+            background: #555;
             cursor: not-allowed;
-            opacity: 0.6;
         }
         
-        .message-label {
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
         }
         
-        .user .message-label {
-            color: #4fc3f7;
-        }
-        
-        .ai .message-label {
-            color: #81c784;
-        }
-        
-        .config-panel {
-            background: #252525;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #333;
-        }
-        
-        .config-panel h3 {
-            color: #4fc3f7;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        
-        .config-item {
-            margin-bottom: 10px;
-        }
-        
-        .config-item label {
-            display: block;
-            margin-bottom: 5px;
-            color: #aaa;
+        .example-btn {
+            padding: 10px;
+            background: #444;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: #ddd;
+            text-align: left;
+            cursor: pointer;
             font-size: 14px;
         }
         
-        .config-item input {
-            width: 100%;
-            padding: 8px;
+        .example-btn:hover {
+            background: #555;
+            border-color: #4CAF50;
+        }
+        
+        code {
             background: #1a1a1a;
-            border: 1px solid #444;
-            border-radius: 4px;
-            color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            color: #ffcc00;
         }
         
-        .warning {
-            background: #4a3428;
-            border: 1px solid #ff9800;
-            color: #ffcc80;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        
-        .model-info {
-            background: #2a3a4a;
-            border: 1px solid #4fc3f7;
-            color: #b3e5fc;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        
-        pre.code-block {
-            background: #0d1117;
+        pre {
+            background: #1a1a1a;
             padding: 15px;
-            border-radius: 6px;
+            border-radius: 5px;
             overflow-x: auto;
             margin: 10px 0;
-            border: 1px solid #30363d;
         }
         
-        pre.code-block code {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            color: #c9d1d9;
-            font-size: 14px;
-            line-height: 1.5;
+        pre code {
+            background: none;
+            padding: 0;
         }
         
-        .thinking {
-            color: #ffb74d !important;
-            font-style: italic;
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #333;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #4CAF50;
+            border-radius: 4px;
+        }
+        
+        .typing {
+            display: inline-block;
+        }
+        
+        .typing span {
+            animation: typing 1s infinite;
+            display: inline-block;
+            margin-left: 2px;
+        }
+        
+        .typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
         }
         
         @media (max-width: 600px) {
-            .chat-container {
-                margin: 20px auto;
+            .container {
                 padding: 15px;
             }
             
-            .messages {
-                height: 300px;
+            .examples {
+                grid-template-columns: 1fr;
             }
             
             .input-area {
                 flex-direction: column;
             }
-            
-            textarea {
-                width: 100%;
-            }
-            
-            button {
-                width: 100%;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <h2>🤖 IA Geradora de Scripts - Groq API</h2>
-        <p class="subtitle">Usando Groq com modelo Qwen 32B para gerar scripts de programação</p>
+    <div class="container">
+        <h1>🤖 Gerador de Scripts IA</h1>
+        <p class="subtitle">Descreva o que precisa → Receba o código pronto</p>
         
-        <div class="config-panel">
-            <h3>Configuração da API Groq</h3>
-            <div class="config-item">
-                <label for="apiKey">Chave da API Groq:</label>
-                <input type="password" id="apiKey" placeholder="Cole sua chave gsk_... aqui">
-            </div>
-            <div class="config-item">
-                <label for="modelSelect">Modelo:</label>
-                <select id="modelSelect">
-                    <option value="qwen/qwen3-32b">Qwen 3 32B (Recomendado)</option>
-                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
-                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
-                    <option value="llama-3.2-3b-preview">Llama 3.2 3B Preview</option>
-                    <option value="llama-3.2-1b-preview">Llama 3.2 1B Preview</option>
-                    <option value="llama-3.2-90b-vision-preview">Llama 3.2 90B Vision</option>
-                    <option value="llama-guard-3-8b">Llama Guard 3 8B</option>
-                    <option value="gemma2-9b-it">Gemma2 9B</option>
-                </select>
-            </div>
-            <div class="model-info">
-                ✅ Usando: <strong>qwen/qwen3-32b</strong><br>
-                ⚡ Rápido e poderoso para geração de código<br>
-                🆓 Gratuito no plano inicial do Groq
-            </div>
-            <div class="warning">
-                🔑 Obtenha sua chave gratuita em: <a href="https://console.groq.com" target="_blank" style="color:#ffcc80;">console.groq.com</a><br>
-                ⚠️ A chave fica apenas no seu navegador
+        <div class="api-key-area">
+            <input 
+                type="text" 
+                class="api-key-input" 
+                id="apiKey" 
+                placeholder="Cole sua chave da Groq API (gsk_...)"
+                value=""
+            >
+            <div class="info">
+                💡 <strong>GRATUITO:</strong> Pegue sua chave em 
+                <a href="https://console.groq.com" target="_blank">console.groq.com</a>
+                • Cadastro rápido • Chave começa com <code>gsk_</code>
             </div>
         </div>
         
-        <div class="messages" id="messages">
-            <div class="msg ai">
-                <div class="message-label">IA:</div>
-                Olá! Sou uma IA especializada em gerar scripts de programação usando a API Groq. 
-                Me diga o que você precisa (ex: "Crie um script Python que leia um arquivo CSV" 
-                ou "JavaScript para validação de formulário") e eu vou gerar o código para você.
-                
-                Insira sua chave Groq (gsk_...) acima para começar.
+        <div class="chat-box" id="chatBox">
+            <div class="message ai-message">
+                <strong>IA:</strong> Olá! Me diga que script você precisa criar.<br><br>
+                Exemplos:<br>
+                • "Crie um script Python para calcular IMC"<br>
+                • "JavaScript para um cronômetro"<br>
+                • "HTML/CSS para um formulário de login"<br>
+                • "Python para renomear arquivos em massa"<br><br>
+                Coloque sua chave da Groq acima para começar.
             </div>
         </div>
         
         <div class="input-area">
-            <textarea id="userInput" placeholder="Exemplo: Crie um script JavaScript que valide um formulário de login..."></textarea>
+            <textarea 
+                id="userInput" 
+                placeholder="Exemplo: Crie um script Python para converter temperatura de Celsius para Fahrenheit..."
+            ></textarea>
             <button id="sendBtn">Gerar Script</button>
+        </div>
+        
+        <div class="examples">
+            <button class="example-btn" data-example="python-calc">Python: Calculadora científica</button>
+            <button class="example-btn" data-example="js-todo">JavaScript: Lista de tarefas</button>
+            <button class="example-btn" data-example="python-csv">Python: Analisar CSV</button>
+            <button class="example-btn" data-example="html-form">HTML/CSS: Formulário bonito</button>
+            <button class="example-btn" data-example="python-web">Python: Baixar imagens</button>
+            <button class="example-btn" data-example="js-game">JavaScript: Jogo da velha</button>
         </div>
     </div>
 
     <script>
-        // Elementos DOM
-        const messagesDiv = document.getElementById("messages");
-        const userInput = document.getElementById("userInput");
-        const sendBtn = document.getElementById("sendBtn");
-        const apiKeyInput = document.getElementById("apiKey");
-        const modelSelect = document.getElementById("modelSelect");
-
-        // URL da API Groq (compatível com OpenAI)
-        const API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-        // Carregar configuração salva
-        function loadConfig() {
-            try {
-                const savedApiKey = localStorage.getItem('groq_api_key') || '';
-                const savedModel = localStorage.getItem('groq_model') || 'qwen/qwen3-32b';
-                
-                apiKeyInput.value = savedApiKey;
-                modelSelect.value = savedModel;
-                
-                updateUI();
-            } catch (e) {
-                console.error("Erro ao carregar configuração:", e);
-            }
-        }
-
-        // Salvar configuração
-        function saveConfig() {
-            try {
-                localStorage.setItem('groq_api_key', apiKeyInput.value);
-                localStorage.setItem('groq_model', modelSelect.value);
-            } catch (e) {
-                console.error("Erro ao salvar configuração:", e);
-            }
-        }
-
-        // Atualizar UI
-        function updateUI() {
-            const hasApiKey = apiKeyInput.value.trim().length > 0;
-            
-            sendBtn.disabled = !hasApiKey;
-            sendBtn.textContent = "Gerar Script";
-            
-            // Atualizar info do modelo
-            const modelInfo = document.querySelector('.model-info');
-            if (modelInfo) {
-                const modelName = modelSelect.options[modelSelect.selectedIndex].text;
-                modelInfo.innerHTML = `✅ Usando: <strong>${modelSelect.value}</strong><br>
-                                     📝 ${modelName}<br>
-                                     ⚡ Otimizado para velocidade`;
-            }
-        }
-
+        // Elementos principais
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const apiKeyInput = document.getElementById('apiKey');
+        
+        // URL da API Groq (funciona 100%)
+        const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+        const MODEL = 'llama-3.1-8b-instant'; // Modelo que FUNCIONA
+        
         // Adicionar mensagem ao chat
-        function addMessage(text, sender, isStreaming = false) {
-            // Se for streaming e já houver mensagem da IA, atualize-a
-            if (isStreaming && sender === "ai") {
-                const lastMsg = messagesDiv.querySelector('.msg.ai:last-child');
-                if (lastMsg && lastMsg.querySelector('.streaming-content')) {
-                    const contentDiv = lastMsg.querySelector('.streaming-content');
-                    contentDiv.textContent = text;
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                    return lastMsg;
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            // Formatar código markdown
+            let formattedText = text;
+            
+            // Substituir blocos de código
+            formattedText = formattedText.replace(/```(\w+)?\n?([\s\S]*?)```/g, 
+                function(match, lang, code) {
+                    return `<pre><code>${code.trim()}</code></pre>`;
                 }
-            }
+            );
             
-            const div = document.createElement("div");
-            div.className = "msg " + sender;
+            // Adicionar prefixo do sender
+            const prefix = sender === 'user' ? '<strong>Você:</strong> ' : '<strong>IA:</strong> ';
+            messageDiv.innerHTML = prefix + formattedText;
             
-            const label = document.createElement("div");
-            label.className = "message-label";
-            label.textContent = sender === "user" ? "Você" : "IA";
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
             
-            const content = document.createElement("div");
-            if (isStreaming && sender === "ai") {
-                content.className = "streaming-content";
-            }
-            content.textContent = text;
-            
-            div.appendChild(label);
-            div.appendChild(content);
-            messagesDiv.appendChild(div);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            
-            return div;
+            return messageDiv;
         }
-
-        // Processar blocos de código na resposta
-        function processCodeBlocks(element) {
-            const text = element.textContent;
-            
-            // Procurar blocos de código markdown
-            const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```/g;
-            let match;
-            let newContent = text;
-            const codeBlocks = [];
-            
-            while ((match = codeBlockRegex.exec(text)) !== null) {
-                const [fullMatch, language, code] = match;
-                const blockId = `code-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                codeBlocks.push({ id: blockId, language: language || 'text', code: code.trim() });
-                newContent = newContent.replace(fullMatch, `[CODE_BLOCK:${blockId}]`);
-            }
-            
-            // Se encontrou blocos de código, processá-los
-            if (codeBlocks.length > 0) {
-                element.innerHTML = newContent;
-                
-                // Substituir placeholders por blocos de código reais
-                codeBlocks.forEach(({ id, language, code }) => {
-                    const placeholderRegex = new RegExp(`\\[CODE_BLOCK:${id}\\]`, 'g');
-                    const placeholderMatches = element.innerHTML.match(placeholderRegex);
-                    
-                    if (placeholderMatches) {
-                        const pre = document.createElement("pre");
-                        pre.className = "code-block";
-                        
-                        // Adicionar indicador de linguagem
-                        if (language && language !== 'text') {
-                            const langSpan = document.createElement("span");
-                            langSpan.style.cssText = "display:block; color:#888; font-size:12px; margin-bottom:5px; padding-bottom:5px; border-bottom:1px solid #333;";
-                            langSpan.textContent = `📝 ${language}`;
-                            pre.appendChild(langSpan);
-                        }
-                        
-                        const codeElement = document.createElement("code");
-                        codeElement.textContent = code;
-                        pre.appendChild(codeElement);
-                        
-                        // Substituir todos os placeholders iguais
-                        element.innerHTML = element.innerHTML.replace(
-                            new RegExp(`\\[CODE_BLOCK:${id}\\]`, 'g'), 
-                            pre.outerHTML
-                        );
-                    }
-                });
-            }
+        
+        // Mostrar indicador de digitação
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai-message';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = '<strong>IA:</strong> <span class="typing"><span>.</span><span>.</span><span>.</span></span>';
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
-
-        // Chamar API Groq com streaming
-        async function callGroqAPI(prompt, onChunk, onComplete) {
+        
+        // Remover indicador de digitação
+        function hideTyping() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+        
+        // Chamar a API Groq
+        async function callGroqAPI(prompt) {
             const apiKey = apiKeyInput.value.trim();
-            const model = modelSelect.value;
             
             if (!apiKey) {
-                throw new Error("Por favor, insira sua chave API Groq (gsk_...)");
+                throw new Error('Por favor, cole sua chave da Groq API primeiro (gsk_...)');
             }
             
-            // Configuração baseada no seu exemplo Python
+            // Configuração SIMPLES que FUNCIONA
             const requestBody = {
-                model: model,
+                model: MODEL,
                 messages: [
                     {
-                        role: "system",
-                        content: `Você é um assistente especializado em programação. 
-                        Gere código limpo, bem documentado e funcional.
-                        Use markdown com blocos de código (```linguagem) para formatar.
-                        Inclua comentários explicativos e dicas de uso.
-                        Seja direto e técnico, focando na solução prática.
-                        Responda em português brasileiro.`
+                        role: 'system',
+                        content: 'Você é um especialista em programação. Gere código completo, funcional e bem comentado. Use markdown para formatar o código. Responda em português.'
                     },
-                    { role: "user", content: prompt }
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
                 ],
-                temperature: 0.6,
-                max_tokens: 4096,
-                top_p: 0.95,
-                stream: true,
-                stop: null
+                temperature: 0.2,
+                max_tokens: 2000,
+                top_p: 0.95
             };
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    let errorMessage;
-                    try {
-                        const errorData = JSON.parse(errorText);
-                        errorMessage = errorData.error?.message || errorText;
-                    } catch {
-                        errorMessage = errorText;
-                    }
-                    throw new Error(`Erro ${response.status}: ${errorMessage}`);
-                }
-
-                // Processar streaming
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let fullResponse = "";
-                
-                // Adicionar mensagem inicial para streaming
-                const messageElement = addMessage("▌", "ai", true);
-                
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-                    
-                    for (const line of lines) {
-                        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                            try {
-                                const data = JSON.parse(line.substring(6));
-                                const content = data.choices[0]?.delta?.content || '';
-                                
-                                if (content) {
-                                    fullResponse += content;
-                                    
-                                    // Atualizar mensagem em tempo real
-                                    const contentDiv = messageElement.querySelector('.streaming-content');
-                                    if (contentDiv) {
-                                        contentDiv.textContent = fullResponse + "▌";
-                                        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                                    }
-                                    
-                                    // Chamar callback do chunk
-                                    if (onChunk) onChunk(content);
-                                }
-                            } catch (e) {
-                                console.warn("Erro ao processar chunk:", e, line);
-                            }
-                        }
-                    }
-                }
-                
-                // Remover cursor piscando e processar blocos de código
-                const contentDiv = messageElement.querySelector('.streaming-content');
-                if (contentDiv) {
-                    contentDiv.textContent = fullResponse;
-                    contentDiv.className = "";
-                    processCodeBlocks(contentDiv);
-                }
-                
-                if (onComplete) onComplete(fullResponse);
-                return fullResponse;
-                
-            } catch (error) {
-                console.error("Erro na API:", error);
-                throw error;
+            
+            // Fazer a requisição
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(`Erro da API: ${response.status} - ${error}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                return data.choices[0].message.content;
+            } else {
+                throw new Error('Resposta da API em formato inesperado');
             }
         }
-
-        // Event Listeners
-        apiKeyInput.addEventListener('input', () => {
-            saveConfig();
-            updateUI();
-        });
-
-        modelSelect.addEventListener('change', () => {
-            saveConfig();
-            updateUI();
-            
-            // Adicionar mensagem informativa
-            addMessage(`Modelo alterado para: ${modelSelect.options[modelSelect.selectedIndex].text}`, "ai");
-        });
-
+        
         // Enviar mensagem
-        sendBtn.addEventListener("click", async () => {
+        async function sendMessage() {
             const text = userInput.value.trim();
-            if (!text) {
-                userInput.focus();
-                return;
-            }
-
-            // Adicionar mensagem do usuário
-            addMessage(text, "user");
-            userInput.value = "";
+            if (!text) return;
             
-            // Desabilitar botão e mostrar loading
+            // Adicionar mensagem do usuário
+            addMessage(text, 'user');
+            
+            // Limpar input
+            userInput.value = '';
+            
+            // Desabilitar botão
             sendBtn.disabled = true;
-            sendBtn.textContent = "Gerando...";
-
+            sendBtn.textContent = 'Gerando...';
+            
+            // Mostrar que está pensando
+            showTyping();
+            
             try {
-                // Chamar API Groq com streaming
-                await callGroqAPI(text, 
-                    // On chunk (streaming)
-                    (chunk) => {
-                        console.log("Chunk recebido:", chunk);
-                    },
-                    // On complete
-                    (fullResponse) => {
-                        console.log("Resposta completa:", fullResponse);
-                    }
-                );
+                // Chamar a API
+                const response = await callGroqAPI(text);
+                
+                // Remover indicador de digitação
+                hideTyping();
+                
+                // Adicionar resposta da IA
+                addMessage(response, 'ai');
                 
             } catch (error) {
-                console.error("Erro completo:", error);
+                // Remover indicador de digitação
+                hideTyping();
                 
-                // Mensagem de erro detalhada
-                let errorMsg = `❌ Erro ao gerar script:\n\n${error.message || error}`;
+                // Mostrar erro amigável
+                let errorMessage = `❌ Erro: ${error.message}`;
                 
-                // Dicas específicas para Groq
-                if (error.message.includes("401") || error.message.includes("403")) {
-                    errorMsg += "\n\n🔑 Problema de autenticação no Groq:";
-                    errorMsg += "\n1. Verifique se copiou a chave corretamente (começa com gsk_)";
-                    errorMsg += "\n2. Acesse console.groq.com para verificar sua chave";
-                    errorMsg += "\n3. Talvez sua chave expirou ou foi revogada";
-                } else if (error.message.includes("429")) {
-                    errorMsg += "\n\n⏰ Limite de taxa excedido no Groq:";
-                    errorMsg += "\n- Espere alguns segundos antes de tentar novamente";
-                    errorMsg += "\n- O Groq tem limites por minuto/hora";
-                } else if (error.message.includes("model_not_found")) {
-                    errorMsg += "\n\n🤖 Modelo não encontrado:";
-                    errorMsg += "\n- Verifique se o nome do modelo está correto";
-                    errorMsg += "\n- Tente usar 'qwen/qwen3-32b' ou 'llama-3.1-8b-instant'";
-                } else if (error.message.includes("Failed to fetch")) {
-                    errorMsg += "\n\n🌐 Problema de conexão:";
-                    errorMsg += "\n- Verifique sua conexão com a internet";
-                    errorMsg += "\n- O Groq pode estar temporariamente indisponível";
+                // Dicas para erros comuns
+                if (error.message.includes('401') || error.message.includes('403')) {
+                    errorMessage += '\n\n🔑 Sua chave API pode estar incorreta ou expirada.';
+                    errorMessage += '\n• Pegue uma nova em: console.groq.com';
+                    errorMessage += '\n• A chave deve começar com gsk_';
+                } else if (error.message.includes('429')) {
+                    errorMessage += '\n\n⏰ Muitas requisições. Espere um pouco.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage += '\n\n🌐 Problema de internet. Verifique sua conexão.';
                 }
                 
-                addMessage(errorMsg, "ai");
+                addMessage(errorMessage, 'ai');
+                
+                console.error('Erro detalhado:', error);
                 
             } finally {
                 // Reabilitar botão
                 sendBtn.disabled = false;
-                sendBtn.textContent = "Gerar Script";
+                sendBtn.textContent = 'Gerar Script';
                 userInput.focus();
-                updateUI();
             }
-        });
+        }
+        
+        // Exemplos de prompts
+        const examples = {
+            'python-calc': `Crie uma calculadora científica em Python com as seguintes funções:
+1. Operações básicas (+, -, *, /)
+2. Potência e raiz quadrada
+3. Seno, cosseno, tangente
+4. Logaritmo natural e base 10
+5. Interface simples no terminal
 
-        // Enviar com Enter (sem Shift)
-        userInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (!sendBtn.disabled) {
-                    sendBtn.click();
+Inclua tratamento de erros e comentários explicativos.`,
+
+            'js-todo': `Crie uma lista de tarefas (To-Do) em JavaScript puro (sem bibliotecas) com:
+1. Adicionar nova tarefa
+2. Marcar tarefa como concluída
+3. Remover tarefa
+4. Filtrar por: todas, pendentes, concluídas
+5. Salvar no localStorage
+
+Inclua HTML, CSS e JavaScript em um único arquivo.`,
+
+            'python-csv': `Crie um script Python para análise de arquivos CSV que:
+1. Leia um arquivo CSV (use pandas se necessário)
+2. Mostre estatísticas básicas (média, máximo, mínimo)
+3. Gere um gráfico simples das colunas numéricas
+4. Exporte um relatório em texto
+5. Perma ao usuário escolher o arquivo
+
+Inclua tratamento de erro se o arquivo não existir.`,
+
+            'html-form': `Crie um formulário de cadastro em HTML/CSS moderno com:
+1. Campos: nome, email, senha, telefone, data nascimento
+2. Validação em tempo real
+3. Design responsivo e bonito
+4. Animações suaves
+5. Botão de enviar com feedback
+
+Use CSS moderno (flexbox, gradients, shadows).`,
+
+            'python-web': `Crie um script Python para baixar imagens de uma página web que:
+1. Use requests e BeautifulSoup
+2. Aceite URL como entrada
+3. Baixe todas as imagens da página
+4. Salve em uma pasta organizada
+5. Mostre progresso
+
+Inclua tratamento de erros e timeouts.`,
+
+            'js-game': `Crie o jogo da velha (Tic-Tac-Toe) em JavaScript com:
+1. Tabuleiro 3x3
+2. Dois jogadores (X e O)
+3. Detecção de vitória/empate
+4. Contador de pontos
+5. Botão de reiniciar
+
+Interface colorida e responsiva.`
+        };
+        
+        // Configurar eventos
+        function setupEvents() {
+            // Enviar ao clicar no botão
+            sendBtn.addEventListener('click', sendMessage);
+            
+            // Enviar com Enter (sem Shift)
+            userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!sendBtn.disabled) {
+                        sendMessage();
+                    }
                 }
+            });
+            
+            // Auto-resize do textarea
+            userInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // Exemplos rápidos
+            document.querySelectorAll('.example-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const exampleKey = this.dataset.example;
+                    if (examples[exampleKey]) {
+                        userInput.value = examples[exampleKey];
+                        userInput.style.height = 'auto';
+                        userInput.style.height = (userInput.scrollHeight) + 'px';
+                        userInput.focus();
+                        
+                        // Feedback visual
+                        this.style.background = '#4CAF50';
+                        this.style.color = 'white';
+                        setTimeout(() => {
+                            this.style.background = '';
+                            this.style.color = '';
+                        }, 1000);
+                    }
+                });
+            });
+            
+            // Salvar chave localmente
+            apiKeyInput.addEventListener('input', function() {
+                localStorage.setItem('groq_api_key', this.value);
+            });
+            
+            // Carregar chave salva
+            const savedKey = localStorage.getItem('groq_api_key');
+            if (savedKey) {
+                apiKeyInput.value = savedKey;
             }
-        });
-
-        // Auto-resize textarea
-        userInput.addEventListener("input", function() {
-            this.style.height = "auto";
-            this.style.height = Math.min(this.scrollHeight, 200) + "px";
-        });
-
-        // Inicializar
-        window.addEventListener("load", () => {
-            loadConfig();
-            userInput.focus();
             
-            // Adicionar mensagem de boas-vindas
-            const welcomeMsg = `🚀 Bem-vindo ao Gerador de Scripts com Groq API!
-
-Para começar:
-1. Obtenha uma chave API GRATUITA em: console.groq.com
-2. Copie a chave (começa com gsk_)
-3. Cole no campo acima
-4. Escolha o modelo (recomendo qwen/qwen3-32b)
-5. Descreva seu script!
-
-Exemplos para testar:
-• "Crie um script Python para converter PDF para TXT"
-• "JavaScript para um cronômetro com pausa e reset"
-• "HTML/CSS para um menu dropdown responsivo"
-
-📢 O Groq é gratuito para uso inicial!`;
+            // Habilitar botão se tiver chave
+            apiKeyInput.addEventListener('input', function() {
+                sendBtn.disabled = !this.value.trim();
+            });
             
-            addMessage(welcomeMsg, "ai");
+            // Verificar inicialmente
+            sendBtn.disabled = !apiKeyInput.value.trim();
+        }
+        
+        // Iniciar quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEvents();
+            
+            // Focar no input
+            setTimeout(() => {
+                if (apiKeyInput.value) {
+                    userInput.focus();
+                } else {
+                    apiKeyInput.focus();
+                }
+            }, 100);
+            
+            // Mensagem de boas-vindas
+            console.log('✅ Gerador de Scripts IA carregado!');
+            console.log('🔑 Pegue sua chave GRATUITA em: https://console.groq.com');
         });
     </script>
 </body>
