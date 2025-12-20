@@ -1,722 +1,686 @@
-<?php
-/**
- * SCRIPT DE LIMPEZA DE EMERGÊNCIA VIA URL
- * 
- * PERIGO: Remove todos os produtos via API do WordPress/WooCommerce
- * USE COM EXTREMA CAUTELA!
- */
-
-// ================= CONFIGURAÇÃO INICIAL =================
-$site_url = 'https://www.nexak.shop/';
-$username = 'usuario_emergencia';
-$password = 'senha_super_forte';
-$action = 'list';
-
-// ================= FUNÇÕES PRINCIPAIS =================
-
-function conectarAPI($site_url, $username, $password) {
-    $credenciais = base64_encode($username . ':' . $password);
-    
-    $headers = [
-        'Authorization: Basic ' . $credenciais,
-        'Content-Type: application/json',
-        'User-Agent: Script-Emergencia/1.0'
-    ];
-    
-    return [
-        'site_url' => $site_url,
-        'headers' => $headers
-    ];
-}
-
-function listarProdutos($conexao) {
-    $url = $conexao['site_url'] . '/wp-json/wc/v3/products?per_page=100';
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $conexao['headers']);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($http_code == 200) {
-        return json_decode($response, true);
-    } else {
-        return [
-            'error' => true,
-            'code' => $http_code,
-            'message' => $response
-        ];
-    }
-}
-
-function deletarProduto($conexao, $product_id, $force = true) {
-    $url = $conexao['site_url'] . "/wp-json/wc/v3/products/{$product_id}";
-    
-    if ($force) {
-        $url .= '?force=true';
-    }
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $conexao['headers']);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($http_code == 200) {
-        $result = json_decode($response, true);
-        return [
-            'success' => true,
-            'id' => $product_id,
-            'name' => isset($result['name']) ? $result['name'] : 'Produto ' . $product_id
-        ];
-    } else {
-        return [
-            'success' => false,
-            'id' => $product_id,
-            'error' => "Código HTTP: $http_code",
-            'response' => $response
-        ];
-    }
-}
-
-function deletarTodosProdutos($conexao) {
-    $resultado = [
-        'total' => 0,
-        'deletados' => 0,
-        'erros' => 0,
-        'produtos' => []
-    ];
-    
-    $produtos = listarProdutos($conexao);
-    
-    if (isset($produtos['error'])) {
-        $resultado['erro_global'] = $produtos;
-        return $resultado;
-    }
-    
-    if (!$produtos || empty($produtos)) {
-        return $resultado;
-    }
-    
-    $resultado['total'] = count($produtos);
-    
-    foreach ($produtos as $produto) {
-        $id = $produto['id'];
-        $nome = $produto['name'];
-        
-        $deletar = deletarProduto($conexao, $id);
-        
-        if ($deletar['success']) {
-            $resultado['deletados']++;
-            $resultado['produtos'][] = [
-                'id' => $id,
-                'nome' => $nome,
-                'status' => 'deletado'
-            ];
-        } else {
-            $resultado['erros']++;
-            $resultado['produtos'][] = [
-                'id' => $id,
-                'nome' => $nome,
-                'status' => 'erro',
-                'erro' => $deletar['error']
-            ];
-        }
-        
-        usleep(300000);
-    }
-    
-    return $resultado;
-}
-
-function verificarConexao($site_url, $username, $password) {
-    $conexao = conectarAPI($site_url, $username, $password);
-    $test_url = $site_url . '/wp-json/wc/v3/products?per_page=1';
-    
-    $ch = curl_init($test_url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $conexao['headers']);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    return [
-        'sucesso' => $http_code == 200,
-        'codigo' => $http_code,
-        'resposta' => $response
-    ];
-}
-
-// ================= PROCESSAMENTO DO FORMULÁRIO =================
-
-$mensagem = '';
-$resultado = null;
-$conexao_valida = false;
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $site_url = rtrim($_POST['site_url'], '/');
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    $action = $_POST['action'];
-    
-    if (isset($_POST['testar'])) {
-        $teste = verificarConexao($site_url, $username, $password);
-        
-        if ($teste['sucesso']) {
-            $mensagem = "✅ Conexão bem-sucedida! API REST está funcionando.";
-            $conexao_valida = true;
-        } else {
-            $mensagem = "❌ Falha na conexão! Código HTTP: " . $teste['codigo'];
-            
-            if (strpos($teste['resposta'], 'rest_cannot_access') !== false) {
-                $mensagem .= "\n⛔ Acesso negado. Verifique as permissões do usuário.";
-            } elseif (strpos($teste['resposta'], 'woocommerce_rest_cannot_view') !== false) {
-                $mensagem .= "\n⚠️ WooCommerce não encontrado ou API desativada.";
-            }
-        }
-    }
-    
-    if (isset($_POST['executar'])) {
-        if ($action == 'list') {
-            $conexao = conectarAPI($site_url, $username, $password);
-            $produtos = listarProdutos($conexao);
-            
-            if (isset($produtos['error'])) {
-                $resultado = "❌ Erro ao listar produtos: Código " . $produtos['code'];
-            } else {
-                $resultado = "📋 PRODUTOS ENCONTRADOS: " . count($produtos) . "\n\n";
-                foreach ($produtos as $produto) {
-                    $resultado .= "ID: " . $produto['id'] . "\n";
-                    $resultado .= "Nome: " . htmlspecialchars($produto['name']) . "\n";
-                    $resultado .= "Status: " . $produto['status'] . "\n";
-                    $resultado .= "Preço: R$ " . ($produto['price'] ?? '0.00') . "\n";
-                    $resultado .= "Estoque: " . ($produto['stock_quantity'] ?? 'N/A') . "\n";
-                    $resultado .= "---\n";
-                }
-            }
-        }
-        
-        if ($action == 'delete') {
-            if (isset($_POST['confirmacao']) && $_POST['confirmacao'] == 'APAGAR-TUDO') {
-                $conexao = conectarAPI($site_url, $username, $password);
-                $resultado_delete = deletarTodosProdutos($conexao);
-                
-                if (isset($resultado_delete['erro_global'])) {
-                    $resultado = "❌ ERRO GLOBAL: Código " . $resultado_delete['erro_global']['code'] . "\n";
-                    $resultado .= "Mensagem: " . $resultado_delete['erro_global']['message'];
-                } else {
-                    $resultado = "✅ OPERAÇÃO CONCLUÍDA!\n";
-                    $resultado .= "================================\n";
-                    $resultado .= "Total encontrado: " . $resultado_delete['total'] . "\n";
-                    $resultado .= "Produtos deletados: " . $resultado_delete['deletados'] . "\n";
-                    $resultado .= "Erros: " . $resultado_delete['erros'] . "\n\n";
-                    
-                    if (!empty($resultado_delete['produtos'])) {
-                        $resultado .= "DETALHES:\n";
-                        foreach ($resultado_delete['produtos'] as $prod) {
-                            $status = ($prod['status'] == 'deletado') ? '✅' : '❌';
-                            $resultado .= "$status ID {$prod['id']}: {$prod['nome']}";
-                            if (isset($prod['erro'])) {
-                                $resultado .= " - ERRO: {$prod['erro']}";
-                            }
-                            $resultado .= "\n";
-                        }
-                    }
-                }
-            } else {
-                $resultado = "❌ Ação cancelada! Confirmação não fornecida ou incorreta.";
-            }
-        }
-    }
-}
-
-// Se houve teste bem-sucedido, manter a conexão como válida
-if (isset($teste) && $teste['sucesso']) {
-    $conexao_valida = true;
-}
-?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚨 Script de Limpeza de Emergência</title>
+    <title>IA Geradora de Scripts - Groq API</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
+            background: #121212; 
+            color: #f5f5f5;
             padding: 20px;
-            color: #333;
+            line-height: 1.6;
         }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-            overflow: hidden;
-            animation: slideIn 0.5s ease;
+        
+        .chat-container { 
+            max-width: 800px; 
+            margin: 40px auto; 
+            border: 1px solid #333; 
+            padding: 25px; 
+            border-radius: 12px; 
+            background: #1e1e1e;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .header {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            padding: 30px;
+        
+        h2 {
+            color: #4fc3f7;
+            margin-bottom: 15px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
+            font-size: 28px;
         }
-        .header::before {
-            content: '⚠️';
-            position: absolute;
-            font-size: 200px;
-            opacity: 0.1;
-            right: -50px;
-            top: -50px;
-        }
-        .header h1 { 
-            font-size: 28px; 
-            margin-bottom: 10px; 
-            position: relative;
-            z-index: 1;
-        }
-        .header .subtitle { 
-            opacity: 0.9; 
-            font-size: 16px;
-            position: relative;
-            z-index: 1;
-        }
-        .content {
-            padding: 40px;
-        }
-        .alert-box {
-            padding: 20px;
-            border-radius: 10px;
+        
+        .subtitle {
+            text-align: center;
+            color: #aaa;
             margin-bottom: 25px;
-            border-left: 5px solid;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-        }
-        .alert-danger {
-            background: #f8d7da;
-            border-color: #dc3545;
-            color: #721c24;
-        }
-        .alert-warning {
-            background: #fff3cd;
-            border-color: #ffc107;
-            color: #856404;
-        }
-        .alert-success {
-            background: #d4edda;
-            border-color: #28a745;
-            color: #155724;
-        }
-        .alert-info {
-            background: #d1ecf1;
-            border-color: #17a2b8;
-            color: #0c5460;
-        }
-        .form-group {
-            margin-bottom: 25px;
-        }
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #2c3e50;
             font-size: 14px;
+        }
+        
+        .messages { 
+            height: 400px; 
+            overflow-y: auto; 
+            border: 1px solid #444; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            background: #000; 
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+        
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .messages::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        .messages::-webkit-scrollbar-thumb {
+            background: #4caf50;
+            border-radius: 4px;
+        }
+        
+        .msg { 
+            margin-bottom: 15px; 
+            padding-bottom: 15px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .msg:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .user { 
+            color: #4fc3f7; 
+        }
+        
+        .ai { 
+            color: #a5d6a7; 
+            white-space: pre-wrap;
+        }
+        
+        .input-area { 
+            display: flex; 
+            gap: 12px;
+            align-items: flex-end;
+        }
+        
+        textarea { 
+            flex: 1; 
+            min-height: 80px;
+            max-height: 200px;
+            resize: vertical; 
+            padding: 12px;
+            background: #252525;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4fc3f7;
+        }
+        
+        textarea::placeholder {
+            color: #888;
+        }
+        
+        button { 
+            padding: 12px 20px; 
+            cursor: pointer; 
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: #fff; 
+            border: none; 
+            border-radius: 6px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            height: 44px;
+        }
+        
+        button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled { 
+            background: #555; 
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .message-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        input[type="text"], input[type="password"], select {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #e0e0e0;
+        
+        .user .message-label {
+            color: #4fc3f7;
+        }
+        
+        .ai .message-label {
+            color: #81c784;
+        }
+        
+        .config-panel {
+            background: #252525;
+            padding: 15px;
             border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s;
-            background: #f8f9fa;
-        }
-        input:focus, select:focus {
-            border-color: #667eea;
-            outline: none;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 14px 28px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-right: 10px;
-            text-decoration: none;
-            min-width: 150px;
-        }
-        .btn i { margin-right: 8px; }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 14px rgba(102, 126, 234, 0.3);
-        }
-        .btn-danger {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-        }
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 14px rgba(220, 53, 69, 0.3);
-        }
-        .btn:disabled {
-            background: #95a5a6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        .btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 25px 0;
-        }
-        .result-box {
-            margin-top: 30px;
-            padding: 25px;
-            background: #2c3e50;
-            border-radius: 10px;
-            color: #ecf0f1;
-            max-height: 500px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            white-space: pre-wrap;
-            line-height: 1.6;
-            border: 1px solid #34495e;
-        }
-        .step {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 20px;
-            border-radius: 10px;
             margin-bottom: 20px;
-            border-left: 4px solid #3498db;
+            border: 1px solid #333;
         }
-        .step h3 {
-            color: #2c3e50;
+        
+        .config-panel h3 {
+            color: #4fc3f7;
             margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 16px;
         }
-        .step-number {
-            background: #3498db;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        .instructions {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 30px;
-            border: 2px dashed #dee2e6;
-        }
-        .instructions ol {
-            margin-left: 20px;
-            margin-top: 10px;
-        }
-        .instructions li {
+        
+        .config-item {
             margin-bottom: 10px;
-            padding-left: 10px;
         }
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            margin-left: 15px;
-        }
-        .status-connected {
-            background: #28a745;
-            color: white;
-        }
-        .status-disconnected {
-            background: #dc3545;
-            color: white;
-        }
-        .progress-container {
-            width: 100%;
-            background: #ecf0f1;
-            border-radius: 10px;
-            margin: 20px 0;
-            overflow: hidden;
-            height: 20px;
-        }
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
-            width: 0%;
-            transition: width 1s ease;
-            border-radius: 10px;
-        }
-        .confirm-box {
-            display: none;
-            background: #fff3cd;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            border: 2px solid #ffc107;
-        }
-        .confirm-box.show {
+        
+        .config-item label {
             display: block;
-            animation: fadeIn 0.5s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .product-count {
-            background: #3498db;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
+            margin-bottom: 5px;
+            color: #aaa;
             font-size: 14px;
-            font-weight: bold;
-            margin-left: 10px;
         }
-        @media (max-width: 768px) {
-            .container { margin: 10px; }
-            .content { padding: 20px; }
-            .btn-group { flex-direction: column; }
-            .btn { width: 100%; margin-bottom: 10px; }
+        
+        .config-item input {
+            width: 100%;
+            padding: 8px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+        }
+        
+        .warning {
+            background: #4a3428;
+            border: 1px solid #ff9800;
+            color: #ffcc80;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .model-info {
+            background: #2a3a4a;
+            border: 1px solid #4fc3f7;
+            color: #b3e5fc;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        pre.code-block {
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border: 1px solid #30363d;
+        }
+        
+        pre.code-block code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #c9d1d9;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .thinking {
+            color: #ffb74d !important;
+            font-style: italic;
+        }
+        
+        @media (max-width: 600px) {
+            .chat-container {
+                margin: 20px auto;
+                padding: 15px;
+            }
+            
+            .messages {
+                height: 300px;
+            }
+            
+            .input-area {
+                flex-direction: column;
+            }
+            
+            textarea {
+                width: 100%;
+            }
+            
+            button {
+                width: 100%;
+            }
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-fire"></i> Script de Limpeza de Emergência</h1>
-            <div class="subtitle">Remoção automática de produtos via API REST</div>
-            <?php if ($conexao_valida): ?>
-                <div class="status-indicator status-connected">
-                    <i class="fas fa-plug"></i> Conectado
-                </div>
-            <?php endif; ?>
+    <div class="chat-container">
+        <h2>🤖 IA Geradora de Scripts - Groq API</h2>
+        <p class="subtitle">Usando Groq com modelo Qwen 32B para gerar scripts de programação</p>
+        
+        <div class="config-panel">
+            <h3>Configuração da API Groq</h3>
+            <div class="config-item">
+                <label for="apiKey">Chave da API Groq:</label>
+                <input type="password" id="apiKey" placeholder="Cole sua chave gsk_... aqui">
+            </div>
+            <div class="config-item">
+                <label for="modelSelect">Modelo:</label>
+                <select id="modelSelect">
+                    <option value="qwen/qwen3-32b">Qwen 3 32B (Recomendado)</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
+                    <option value="llama-3.2-3b-preview">Llama 3.2 3B Preview</option>
+                    <option value="llama-3.2-1b-preview">Llama 3.2 1B Preview</option>
+                    <option value="llama-3.2-90b-vision-preview">Llama 3.2 90B Vision</option>
+                    <option value="llama-guard-3-8b">Llama Guard 3 8B</option>
+                    <option value="gemma2-9b-it">Gemma2 9B</option>
+                </select>
+            </div>
+            <div class="model-info">
+                ✅ Usando: <strong>qwen/qwen3-32b</strong><br>
+                ⚡ Rápido e poderoso para geração de código<br>
+                🆓 Gratuito no plano inicial do Groq
+            </div>
+            <div class="warning">
+                🔑 Obtenha sua chave gratuita em: <a href="https://console.groq.com" target="_blank" style="color:#ffcc80;">console.groq.com</a><br>
+                ⚠️ A chave fica apenas no seu navegador
+            </div>
         </div>
         
-        <div class="content">
-            <div class="alert-box alert-danger">
-                <h3><i class="fas fa-exclamation-triangle"></i> ALERTA CRÍTICO DE SEGURANÇA</h3>
-                <p>Este script irá REMOVER PERMANENTEMENTE todos os produtos do seu site WooCommerce.</p>
-                <p><strong><i class="fas fa-database"></i> FAÇA BACKUP COMPLETO DO BANCO DE DADOS ANTES DE CONTINUAR!</strong></p>
+        <div class="messages" id="messages">
+            <div class="msg ai">
+                <div class="message-label">IA:</div>
+                Olá! Sou uma IA especializada em gerar scripts de programação usando a API Groq. 
+                Me diga o que você precisa (ex: "Crie um script Python que leia um arquivo CSV" 
+                ou "JavaScript para validação de formulário") e eu vou gerar o código para você.
+                
+                Insira sua chave Groq (gsk_...) acima para começar.
             </div>
-            
-            <div class="step">
-                <h3><span class="step-number">1</span> Preparar o Site</h3>
-                <p>Crie um usuário temporário no WordPress com perfil <strong>Administrador</strong> e permissões de escrita na API REST.</p>
-            </div>
-            
-            <div class="step">
-                <h3><span class="step-number">2</span> Testar Conexão</h3>
-                <p>Verifique se a API REST está ativa acessando: 
-                    <code style="background: #e9ecef; padding: 5px 10px; border-radius: 4px; margin-left: 10px;">
-                        <?php echo htmlspecialchars($site_url); ?>/wp-json/wc/v3
-                    </code>
-                </p>
-            </div>
-            
-            <form method="POST" id="configForm">
-                <div class="form-group">
-                    <label for="site_url"><i class="fas fa-link"></i> URL do Seu Site</label>
-                    <input type="text" id="site_url" name="site_url" 
-                           value="<?php echo htmlspecialchars($site_url); ?>" 
-                           placeholder="https://seusite.com" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="username"><i class="fas fa-user"></i> Usuário da API</label>
-                    <input type="text" id="username" name="username" 
-                           value="<?php echo htmlspecialchars($username); ?>" 
-                           placeholder="usuario_emergencia" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="password"><i class="fas fa-lock"></i> Senha da API</label>
-                    <input type="password" id="password" name="password" 
-                           value="<?php echo htmlspecialchars($password); ?>" 
-                           placeholder="senha_forte" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="action"><i class="fas fa-bullseye"></i> Ação a Executar</label>
-                    <select id="action" name="action" onchange="toggleConfirmBox()">
-                        <option value="list" <?php echo ($action == 'list') ? 'selected' : ''; ?>>
-                            <i class="fas fa-list"></i> Listar Produtos (Somente Visualizar)
-                        </option>
-                        <option value="delete" <?php echo ($action == 'delete') ? 'selected' : ''; ?>>
-                            <i class="fas fa-trash"></i> Deletar TODOS os Produtos
-                        </option>
-                    </select>
-                </div>
-                
-                <div id="confirmBox" class="confirm-box">
-                    <h4><i class="fas fa-shield-alt"></i> Confirmação de Segurança</h4>
-                    <p>Para deletar todos os produtos, digite <strong>APAGAR-TUDO</strong> no campo abaixo:</p>
-                    <input type="text" id="confirmacao" name="confirmacao" 
-                           placeholder="Digite APAGAR-TUDO aqui" style="width: 100%; margin: 10px 0;">
-                </div>
-                
-                <?php if (!empty($mensagem)): ?>
-                    <div class="alert-box <?php echo strpos($mensagem, '✅') !== false ? 'alert-success' : 'alert-danger'; ?>">
-                        <?php echo nl2br(htmlspecialchars($mensagem)); ?>
-                    </div>
-                <?php endif; ?>
-                
-                <div class="btn-group">
-                    <button type="submit" class="btn btn-primary" name="testar">
-                        <i class="fas fa-plug"></i> Testar Conexão
-                    </button>
-                    
-                    <button type="submit" class="btn btn-danger" name="executar" id="executarBtn" 
-                            <?php echo !$conexao_valida ? 'disabled' : ''; ?>>
-                        <i class="fas fa-bolt"></i> Executar Ação
-                    </button>
-                    
-                    <button type="button" class="btn" onclick="limparFormulario()" style="background: #6c757d; color: white;">
-                        <i class="fas fa-eraser"></i> Limpar
-                    </button>
-                </div>
-            </form>
-            
-            <?php if (!empty($resultado)): ?>
-                <div class="result-box">
-                    <h4><i class="fas fa-clipboard-list"></i> Resultado da Operação:</h4>
-                    <div style="margin-top: 15px;">
-                        <?php echo nl2br(htmlspecialchars($resultado)); ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-            
-            <div class="instructions">
-                <h3><i class="fas fa-info-circle"></i> Instruções Importantes:</h3>
-                <ol>
-                    <li><strong>Crie um usuário temporário</strong> no WordPress → Usuários → Adicionar Novo</li>
-                    <li><strong>Atribua perfil Administrador</strong> ao novo usuário</li>
-                    <li><strong>Use uma senha forte</strong> e anote as credenciais</li>
-                    <li><strong>Teste a conexão</strong> antes de executar qualquer ação</li>
-                    <li><strong>Faça backup completo</strong> antes de deletar produtos</li>
-                    <li><strong>Remova este script</strong> e o usuário temporário após o uso</li>
-                </ol>
-                
-                <div style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 5px;">
-                    <h4><i class="fas fa-tools"></i> Solução de Problemas:</h4>
-                    <ul style="margin-left: 20px; margin-top: 10px;">
-                        <li><strong>Erro 401:</strong> Credenciais inválidas ou usuário sem permissão</li>
-                        <li><strong>Erro 404:</strong> API REST não encontrada (WooCommerce pode não estar instalado)</li>
-                        <li><strong>Erro 403:</strong> Acesso negado (verifique permissões do usuário)</li>
-                        <li><strong>Timeout:</strong> Servidor não responde (verifique URL e servidor)</li>
-                    </ul>
-                </div>
-            </div>
+        </div>
+        
+        <div class="input-area">
+            <textarea id="userInput" placeholder="Exemplo: Crie um script JavaScript que valide um formulário de login..."></textarea>
+            <button id="sendBtn">Gerar Script</button>
         </div>
     </div>
-    
+
     <script>
-        function toggleConfirmBox() {
-            const action = document.getElementById('action').value;
-            const confirmBox = document.getElementById('confirmBox');
-            
-            if (action === 'delete') {
-                confirmBox.classList.add('show');
-            } else {
-                confirmBox.classList.remove('show');
-            }
-        }
-        
-        function limparFormulario() {
-            if (confirm('Deseja limpar todos os campos?')) {
-                document.getElementById('configForm').reset();
-                document.getElementById('confirmBox').classList.remove('show');
-                document.getElementById('executarBtn').disabled = true;
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            toggleConfirmBox();
-            
-            document.querySelector('form').addEventListener('submit', function(e) {
-                const action = document.getElementById('action').value;
-                const executarBtn = e.submitter;
+        // Elementos DOM
+        const messagesDiv = document.getElementById("messages");
+        const userInput = document.getElementById("userInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const apiKeyInput = document.getElementById("apiKey");
+        const modelSelect = document.getElementById("modelSelect");
+
+        // URL da API Groq (compatível com OpenAI)
+        const API_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+        // Carregar configuração salva
+        function loadConfig() {
+            try {
+                const savedApiKey = localStorage.getItem('groq_api_key') || '';
+                const savedModel = localStorage.getItem('groq_model') || 'qwen/qwen3-32b';
                 
-                if (executarBtn.name === 'executar' && action === 'delete') {
-                    const confirmacao = document.getElementById('confirmacao').value;
+                apiKeyInput.value = savedApiKey;
+                modelSelect.value = savedModel;
+                
+                updateUI();
+            } catch (e) {
+                console.error("Erro ao carregar configuração:", e);
+            }
+        }
+
+        // Salvar configuração
+        function saveConfig() {
+            try {
+                localStorage.setItem('groq_api_key', apiKeyInput.value);
+                localStorage.setItem('groq_model', modelSelect.value);
+            } catch (e) {
+                console.error("Erro ao salvar configuração:", e);
+            }
+        }
+
+        // Atualizar UI
+        function updateUI() {
+            const hasApiKey = apiKeyInput.value.trim().length > 0;
+            
+            sendBtn.disabled = !hasApiKey;
+            sendBtn.textContent = "Gerar Script";
+            
+            // Atualizar info do modelo
+            const modelInfo = document.querySelector('.model-info');
+            if (modelInfo) {
+                const modelName = modelSelect.options[modelSelect.selectedIndex].text;
+                modelInfo.innerHTML = `✅ Usando: <strong>${modelSelect.value}</strong><br>
+                                     📝 ${modelName}<br>
+                                     ⚡ Otimizado para velocidade`;
+            }
+        }
+
+        // Adicionar mensagem ao chat
+        function addMessage(text, sender, isStreaming = false) {
+            // Se for streaming e já houver mensagem da IA, atualize-a
+            if (isStreaming && sender === "ai") {
+                const lastMsg = messagesDiv.querySelector('.msg.ai:last-child');
+                if (lastMsg && lastMsg.querySelector('.streaming-content')) {
+                    const contentDiv = lastMsg.querySelector('.streaming-content');
+                    contentDiv.textContent = text;
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    return lastMsg;
+                }
+            }
+            
+            const div = document.createElement("div");
+            div.className = "msg " + sender;
+            
+            const label = document.createElement("div");
+            label.className = "message-label";
+            label.textContent = sender === "user" ? "Você" : "IA";
+            
+            const content = document.createElement("div");
+            if (isStreaming && sender === "ai") {
+                content.className = "streaming-content";
+            }
+            content.textContent = text;
+            
+            div.appendChild(label);
+            div.appendChild(content);
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            return div;
+        }
+
+        // Processar blocos de código na resposta
+        function processCodeBlocks(element) {
+            const text = element.textContent;
+            
+            // Procurar blocos de código markdown
+            const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```/g;
+            let match;
+            let newContent = text;
+            const codeBlocks = [];
+            
+            while ((match = codeBlockRegex.exec(text)) !== null) {
+                const [fullMatch, language, code] = match;
+                const blockId = `code-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                codeBlocks.push({ id: blockId, language: language || 'text', code: code.trim() });
+                newContent = newContent.replace(fullMatch, `[CODE_BLOCK:${blockId}]`);
+            }
+            
+            // Se encontrou blocos de código, processá-los
+            if (codeBlocks.length > 0) {
+                element.innerHTML = newContent;
+                
+                // Substituir placeholders por blocos de código reais
+                codeBlocks.forEach(({ id, language, code }) => {
+                    const placeholderRegex = new RegExp(`\\[CODE_BLOCK:${id}\\]`, 'g');
+                    const placeholderMatches = element.innerHTML.match(placeholderRegex);
                     
-                    if (confirmacao !== 'APAGAR-TUDO') {
-                        e.preventDefault();
-                        alert('❌ Confirmação necessária! Digite "APAGAR-TUDO" no campo de confirmação.');
-                        document.getElementById('confirmacao').focus();
-                        return false;
+                    if (placeholderMatches) {
+                        const pre = document.createElement("pre");
+                        pre.className = "code-block";
+                        
+                        // Adicionar indicador de linguagem
+                        if (language && language !== 'text') {
+                            const langSpan = document.createElement("span");
+                            langSpan.style.cssText = "display:block; color:#888; font-size:12px; margin-bottom:5px; padding-bottom:5px; border-bottom:1px solid #333;";
+                            langSpan.textContent = `📝 ${language}`;
+                            pre.appendChild(langSpan);
+                        }
+                        
+                        const codeElement = document.createElement("code");
+                        codeElement.textContent = code;
+                        pre.appendChild(codeElement);
+                        
+                        // Substituir todos os placeholders iguais
+                        element.innerHTML = element.innerHTML.replace(
+                            new RegExp(`\\[CODE_BLOCK:${id}\\]`, 'g'), 
+                            pre.outerHTML
+                        );
                     }
-                    
-                    if (!confirm('⚠️ ATENÇÃO FINAL!\n\nEsta ação irá REMOVER TODOS OS PRODUTOS permanentemente.\n\nTem certeza ABSOLUTA que deseja continuar?')) {
-                        e.preventDefault();
-                        return false;
+                });
+            }
+        }
+
+        // Chamar API Groq com streaming
+        async function callGroqAPI(prompt, onChunk, onComplete) {
+            const apiKey = apiKeyInput.value.trim();
+            const model = modelSelect.value;
+            
+            if (!apiKey) {
+                throw new Error("Por favor, insira sua chave API Groq (gsk_...)");
+            }
+            
+            // Configuração baseada no seu exemplo Python
+            const requestBody = {
+                model: model,
+                messages: [
+                    {
+                        role: "system",
+                        content: `Você é um assistente especializado em programação. 
+                        Gere código limpo, bem documentado e funcional.
+                        Use markdown com blocos de código (```linguagem) para formatar.
+                        Inclua comentários explicativos e dicas de uso.
+                        Seja direto e técnico, focando na solução prática.
+                        Responda em português brasileiro.`
+                    },
+                    { role: "user", content: prompt }
+                ],
+                temperature: 0.6,
+                max_tokens: 4096,
+                top_p: 0.95,
+                stream: true,
+                stop: null
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage;
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.error?.message || errorText;
+                    } catch {
+                        errorMessage = errorText;
                     }
+                    throw new Error(`Erro ${response.status}: ${errorMessage}`);
+                }
+
+                // Processar streaming
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = "";
+                
+                // Adicionar mensagem inicial para streaming
+                const messageElement = addMessage("▌", "ai", true);
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
                     
-                    // Mostrar barra de progresso
-                    const resultBox = document.querySelector('.result-box');
-                    if (resultBox) {
-                        resultBox.innerHTML = '<h4><i class="fas fa-spinner fa-spin"></i> Processando... Aguarde...</h4>';
-                        resultBox.style.display = 'block';
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                            try {
+                                const data = JSON.parse(line.substring(6));
+                                const content = data.choices[0]?.delta?.content || '';
+                                
+                                if (content) {
+                                    fullResponse += content;
+                                    
+                                    // Atualizar mensagem em tempo real
+                                    const contentDiv = messageElement.querySelector('.streaming-content');
+                                    if (contentDiv) {
+                                        contentDiv.textContent = fullResponse + "▌";
+                                        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                                    }
+                                    
+                                    // Chamar callback do chunk
+                                    if (onChunk) onChunk(content);
+                                }
+                            } catch (e) {
+                                console.warn("Erro ao processar chunk:", e, line);
+                            }
+                        }
                     }
                 }
-            });
+                
+                // Remover cursor piscando e processar blocos de código
+                const contentDiv = messageElement.querySelector('.streaming-content');
+                if (contentDiv) {
+                    contentDiv.textContent = fullResponse;
+                    contentDiv.className = "";
+                    processCodeBlocks(contentDiv);
+                }
+                
+                if (onComplete) onComplete(fullResponse);
+                return fullResponse;
+                
+            } catch (error) {
+                console.error("Erro na API:", error);
+                throw error;
+            }
+        }
+
+        // Event Listeners
+        apiKeyInput.addEventListener('input', () => {
+            saveConfig();
+            updateUI();
         });
-        
-        <?php if ($conexao_valida): ?>
-            document.getElementById('executarBtn').disabled = false;
-        <?php endif; ?>
+
+        modelSelect.addEventListener('change', () => {
+            saveConfig();
+            updateUI();
+            
+            // Adicionar mensagem informativa
+            addMessage(`Modelo alterado para: ${modelSelect.options[modelSelect.selectedIndex].text}`, "ai");
+        });
+
+        // Enviar mensagem
+        sendBtn.addEventListener("click", async () => {
+            const text = userInput.value.trim();
+            if (!text) {
+                userInput.focus();
+                return;
+            }
+
+            // Adicionar mensagem do usuário
+            addMessage(text, "user");
+            userInput.value = "";
+            
+            // Desabilitar botão e mostrar loading
+            sendBtn.disabled = true;
+            sendBtn.textContent = "Gerando...";
+
+            try {
+                // Chamar API Groq com streaming
+                await callGroqAPI(text, 
+                    // On chunk (streaming)
+                    (chunk) => {
+                        console.log("Chunk recebido:", chunk);
+                    },
+                    // On complete
+                    (fullResponse) => {
+                        console.log("Resposta completa:", fullResponse);
+                    }
+                );
+                
+            } catch (error) {
+                console.error("Erro completo:", error);
+                
+                // Mensagem de erro detalhada
+                let errorMsg = `❌ Erro ao gerar script:\n\n${error.message || error}`;
+                
+                // Dicas específicas para Groq
+                if (error.message.includes("401") || error.message.includes("403")) {
+                    errorMsg += "\n\n🔑 Problema de autenticação no Groq:";
+                    errorMsg += "\n1. Verifique se copiou a chave corretamente (começa com gsk_)";
+                    errorMsg += "\n2. Acesse console.groq.com para verificar sua chave";
+                    errorMsg += "\n3. Talvez sua chave expirou ou foi revogada";
+                } else if (error.message.includes("429")) {
+                    errorMsg += "\n\n⏰ Limite de taxa excedido no Groq:";
+                    errorMsg += "\n- Espere alguns segundos antes de tentar novamente";
+                    errorMsg += "\n- O Groq tem limites por minuto/hora";
+                } else if (error.message.includes("model_not_found")) {
+                    errorMsg += "\n\n🤖 Modelo não encontrado:";
+                    errorMsg += "\n- Verifique se o nome do modelo está correto";
+                    errorMsg += "\n- Tente usar 'qwen/qwen3-32b' ou 'llama-3.1-8b-instant'";
+                } else if (error.message.includes("Failed to fetch")) {
+                    errorMsg += "\n\n🌐 Problema de conexão:";
+                    errorMsg += "\n- Verifique sua conexão com a internet";
+                    errorMsg += "\n- O Groq pode estar temporariamente indisponível";
+                }
+                
+                addMessage(errorMsg, "ai");
+                
+            } finally {
+                // Reabilitar botão
+                sendBtn.disabled = false;
+                sendBtn.textContent = "Gerar Script";
+                userInput.focus();
+                updateUI();
+            }
+        });
+
+        // Enviar com Enter (sem Shift)
+        userInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (!sendBtn.disabled) {
+                    sendBtn.click();
+                }
+            }
+        });
+
+        // Auto-resize textarea
+        userInput.addEventListener("input", function() {
+            this.style.height = "auto";
+            this.style.height = Math.min(this.scrollHeight, 200) + "px";
+        });
+
+        // Inicializar
+        window.addEventListener("load", () => {
+            loadConfig();
+            userInput.focus();
+            
+            // Adicionar mensagem de boas-vindas
+            const welcomeMsg = `🚀 Bem-vindo ao Gerador de Scripts com Groq API!
+
+Para começar:
+1. Obtenha uma chave API GRATUITA em: console.groq.com
+2. Copie a chave (começa com gsk_)
+3. Cole no campo acima
+4. Escolha o modelo (recomendo qwen/qwen3-32b)
+5. Descreva seu script!
+
+Exemplos para testar:
+• "Crie um script Python para converter PDF para TXT"
+• "JavaScript para um cronômetro com pausa e reset"
+• "HTML/CSS para um menu dropdown responsivo"
+
+📢 O Groq é gratuito para uso inicial!`;
+            
+            addMessage(welcomeMsg, "ai");
+        });
     </script>
 </body>
 </html>
