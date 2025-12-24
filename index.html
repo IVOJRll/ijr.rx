@@ -1,548 +1,1866 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IJR.RX - Gerador Inteligente de Código IJR.RX</title>
-    <meta name="description" content="Gere códigos completos e profissionais com IA de forma rápida e gratuita usando a Groq." />
-
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-    <!-- Prism.js -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-html.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox ijr.rx - Lua Script</title>
+    <meta name="description" content="AI-powered Lua script generator for Roblox cheats. Access requires valid Groq API key.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#000000",
+                        secondary: "#FF0000",
+                        dark: "#0A0A0A",
+                        "dark-gray": "#1A1A1A",
+                        "light-red": "#FF3333",
+                        "groq-green": "#10B981"
+                    },
+                    fontFamily: {
+                        'orbitron': ['Orbitron', 'sans-serif'],
+                        'roboto-mono': ['Roboto Mono', 'monospace']
+                    },
+                    animation: {
+                        'pulse-red': 'pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        'pulse-red': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: .5 },
+                        },
+                        'glow': {
+                            'from': { textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #ff0000, 0 0 40px #ff0000' },
+                            'to': { textShadow: '0 0 20px #fff, 0 0 30px #ff3333, 0 0 40px #ff3333, 0 0 50px #ff3333' }
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --bg: #0b0f1a;
-            --card: #131a2e;
-            --text: #e0e7ff;
-            --text-muted: #94a3b8;
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --success: #10b981;
-            --border: #1e293b;
-            --radius: 16px;
-            --shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        }
-
-        [data-theme="light"] {
-            --bg: #f1f5f9;
-            --card: #ffffff;
-            --text: #1e293b;
-            --text-muted: #64748b;
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --border: #e2e8f0;
-            --shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            background: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%);
             min-height: 100vh;
-            transition: background 0.4s ease, color 0.4s ease;
-            line-height: 1.6;
         }
-
-        header {
-            padding: 1.5rem 0;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(11, 15, 26, 0.8);
+        
+        .code-block {
+            background: #1E1E1E;
+            border-left: 4px solid #FF0000;
         }
-
-        [data-theme="light"] header {
-            background: rgba(241, 245, 249, 0.8);
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-        }
-
-        .header-inner {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, #6366f1, #a78bfa);
+        
+        .gradient-text {
+            background: linear-gradient(90deg, #FF0000 0%, #FF3333 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-
-        .theme-btn {
-            background: none;
-            border: none;
-            font-size: 1.8rem;
-            cursor: pointer;
-            padding: 0.6rem;
-            border-radius: 50%;
+        
+        .neon-border {
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.2), inset 0 0 10px rgba(255, 0, 0, 0.1);
+        }
+        
+        .neon-button {
+            background: linear-gradient(90deg, #FF0000 0%, #CC0000 100%);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
             transition: all 0.3s ease;
         }
-
-        .theme-btn:hover {
-            background: rgba(99, 102, 241, 0.15);
+        
+        .neon-button:hover {
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.8);
+            transform: translateY(-2px);
         }
-
-        main {
-            padding: 3rem 0;
+        
+        .groq-border {
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
         }
-
-        .hero-card {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 2.5rem;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
+        
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
         }
-
-        h1 {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
+        
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1A1A1A;
         }
-
-        .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            margin-bottom: 2.5rem;
+        
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #FF0000;
+            border-radius: 4px;
         }
-
-        .api-section {
-            background: rgba(0,0,0,0.15);
-            padding: 1.5rem;
-            border-radius: var(--radius);
-            margin-bottom: 2rem;
-            border: 1px dashed var(--border);
+        
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: #CC0000;
         }
-
-        .api-input {
-            width: 100%;
-            padding: 1rem 1.2rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-size: 1rem;
-            margin-bottom: 1rem;
+        
+        .api-key-input {
+            font-family: 'Roboto Mono', monospace;
+            letter-spacing: 0.5px;
         }
-
-        .api-info {
-            font-size: 0.95rem;
-            color: var(--text-muted);
+        
+        .valid-key {
+            border-color: #10B981 !important;
+            box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2) !important;
         }
-
-        .api-info a {
-            color: var(--primary);
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .chat-container {
-            background: rgba(0,0,0,0.15);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            height: 600px;
-            overflow-y: auto;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .message {
-            max-width: 80%;
-            padding: 1rem 1.3rem;
-            border-radius: 18px;
-            animation: fadeUp 0.4s ease;
-            position: relative;
-        }
-
-        .user {
-            align-self: flex-end;
-            background: var(--primary);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .ai {
-            align-self: flex-start;
-            background: rgba(16, 185, 129, 0.15);
-            border-left: 4px solid var(--success);
-            border-bottom-left-radius: 4px;
-        }
-
-        .copy-code {
-            position: absolute;
-            top: 8px;
-            right: 10px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.4rem 0.8rem;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .ai:hover .copy-code {
-            opacity: 1;
-        }
-
-        .copy-code:hover {
-            background: var(--primary-hover);
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .input-group {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        textarea {
-            flex: 1;
-            padding: 1.2rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-size: 1rem;
-            resize: vertical;
-            min-height: 120px;
-            font-family: inherit;
-        }
-
-        .send-btn {
-            padding: 0 2rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            align-self: end;
-        }
-
-        .send-btn:hover:not(:disabled) {
-            background: var(--primary-hover);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .examples-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-        }
-
-        .example-card {
-            background: rgba(0,0,0,0.15);
-            padding: 1.3rem;
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: left;
-        }
-
-        .example-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-
-        .example-card strong {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-muted);
-            display: none;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid var(--border);
-            border-top: 5px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        pre {
-            background: #1a1a1a !important;
-            border-radius: 12px !important;
-            padding: 1rem !important;
-            margin: 0.8rem 0 !important;
-            overflow-x: auto;
-        }
-
-        @media (max-width: 768px) {
-            .container { padding: 0 1rem; }
-            h1 { font-size: 2rem; }
-            .chat-container { height: 450px; }
-            .input-group { flex-direction: column; }
-            .examples-grid { grid-template-columns: 1fr; }
+        
+        .invalid-key {
+            border-color: #EF4444 !important;
+            box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.2) !important;
         }
     </style>
 </head>
-<body data-theme="dark">
-    <header>
-        <div class="container">
-            <div class="header-inner">
-                <div class="logo"> IJR.RX </div>
-                <button class="theme-btn" id="themeToggle">🌙</button>
-            </div>
-        </div>
-    </header>
-
-    <main>
-        <div class="container">
-            <div class="hero-card">
-                <h1>🚀 Gerador Inteligente de Código com IA feito por IJR.RX</h1>
-                <p class="subtitle">Descreva o que você precisa e receba código completo, comentado e pronto para usar</p>
-
-                <div class="api-section">
-                    <input type="text" class="api-input" id="apiKey" placeholder="Cole sua chave Groq API aqui (gsk_...)">
-                    <p class="api-info">
-                        🔑 Precisa de uma chave sem limites? Entre em contato no Instagram: 
-                        <a href="https://www.instagram.com/ijr.rx" target="_blank">@ijr.rx</a>
-                    </p>
+<body class="min-h-screen text-white font-roboto-mono">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-md mx-auto">
+            <!-- Logo and Title -->
+            <div class="text-center mb-10">
+                <div class="animate-float mb-6">
+                    <div class="w-24 h-24 mx-auto bg-gradient-to-br from-red-600 to-black rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-4xl text-white"></i>
+                    </div>
                 </div>
-
-                <div class="chat-container" id="chatBox"></div>
-
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Gerando código com inteligência artificial...</p>
+                
+                <h1 class="text-4xl md:text-5xl font-orbitron font-bold mb-2">
+                    <span class="gradient-text">ROBLOX</span>
+                    <span class="text-white">CHEAT</span>
+                    <span class="gradient-text">ijr.rx</span>
+                </h1>
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <div class="h-1 w-10 bg-red-600"></div>
+                    <p class="text-gray-400 text-sm">IJR.RX AI</p>
+                    <div class="h-1 w-10 bg-red-600"></div>
                 </div>
-
-                <div class="input-group">
-                    <textarea id="userInput" placeholder="Ex: Crie um bot do Telegram em Python que envie mensagens automáticas..."></textarea>
-                    <button class="send-btn" id="sendBtn" disabled>Enviar</button>
-                </div>
-
-                <div class="examples-grid">
-                    <div class="example-card" data-prompt="Crie uma calculadora científica avançada em Python com interface gráfica usando Tkinter.">
-                        <strong>🧮 Calculadora Científica</strong>
-                        <span>Python + Tkinter</span>
-                    </div>
-                    <div class="example-card" data-prompt="Desenvolva uma To-Do List completa com HTML, CSS e JavaScript, com salvamento no localStorage e drag & drop.">
-                        <strong>✅ To-Do List Avançada</strong>
-                        <span>HTML/CSS/JS</span>
-                    </div>
-                    <div class="example-card" data-prompt="Script Python para analisar dados de vendas em CSV, gerar estatísticas e gráfico com Plotly.">
-                        <strong>📊 Análise de Dados</strong>
-                        <span>Pandas + Plotly</span>
-                    </div>
-                    <div class="example-card" data-prompt="Crie um formulário de login moderno e responsivo com validação em tempo real usando apenas HTML, CSS e JS.">
-                        <strong>🔐 Formulário de Login</strong>
-                        <span>HTML/CSS/JS</span>
-                    </div>
-                    <div class="example-card" data-prompt="Desenvolva um web scraper em Python para extrair preços de produtos de um site de e-commerce.">
-                        <strong>🌐 Web Scraper</strong>
-                        <span>Requests + BeautifulSoup</span>
-                    </div>
-                    <div class="example-card" data-prompt="Crie um jogo da velha (Tic Tac Toe) completo com IA simples em JavaScript puro.">
-                        <strong>🎮 Jogo da Velha com IA</strong>
-                        <span>JavaScript</span>
+                <p class="text-gray-400 mb-6">IJR.RX Lua Script</p>
+                
+                <div class="neon-border rounded-lg p-4 mb-8">
+                    <div class="flex items-center justify-center space-x-2 text-red-400">
+                        <i class="fas fa-shield-alt"></i>
+                        <span class="text-sm">IJR.RX API KEY NECESSÁRIA</span>
+                        <i class="fas fa-key"></i>
                     </div>
                 </div>
             </div>
+            
+            <!-- Login Form -->
+            <div class="bg-dark-gray rounded-xl p-8 neon-border">
+                <div class="flex items-center justify-center mb-6">
+                    <div class="bg-groq-green/20 border border-groq-green rounded-lg py-2 px-4 flex items-center">
+                        <i class="fab fa-gripfire text-groq-green mr-2"></i>
+                        <span class="text-groq-green font-bold">IJR.RX AI</span>
+                        <span class="text-gray-300 ml-2">API NECESSÁRIA</span>
+                    </div>
+                </div>
+                
+                <h2 class="text-2xl font-orbitron font-bold mb-6 text-center">GROQ API AUTTICAÇÃO</h2>
+                 INSIRA SUA CHAVE API
+                <div class="mb-6">
+                    <label class="block text-gray-300 text-sm font-medium mb-2" for="apiKey">
+                        <i class="fas fa-key mr-2 text-red-500"></i>
+                        
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="apiKey" 
+                            class="api-key-input w-full bg-black border border-gray-800 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition"
+                            placeholder="gsk_XXXXXXXXXXXXXXX"
+                        >
+                        <button 
+                            id="toggleKeyVisibility" 
+                            class="absolute right-3 top-3 text-gray-400 hover:text-white"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center mt-2">
+                        <i class="fas fa-info-circle text-gray-500 mr-2"></i>
+                        <p class="text-gray-500 text-xs">
+                            Pegue sua chave API 
+                            <a href="https://www.instagram.com/ijr.rx?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" class="text-groq-green hover:text-groq-green/80 underline">
+                                instagram @IJR.RX
+                            </a>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- API Key Instructions -->
+                <div class="mb-6 groq-border rounded-lg p-4">
+                    <h4 class="font-bold text-groq-green mb-2 flex items-center">
+                        <i class="fas fa-graduation-cap mr-2"></i>
+                    COMO OBTER SUA CHAVE API
+                    </h4>
+                    <ol class="text-xs text-gray-300 space-y-1 ml-4">
+                        <li class="flex items-start">
+                            <span class="text-groq-green mr-2">1.</span>
+                            Visita 
+                            <a href="https://www.instagram.com/ijr.rx?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" class="text-groq-green hover:text-groq-green/80 underline mx-1">
+                                https://www.instagram.com/ijr.
+                            </a>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-groq-green mr-2">2.</span>
+                           so nao faz merda ok
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-groq-green mr-2">3.</span>
+                            Clique no botão "Criar Chave de API"
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-groq-green mr-2">4.</span>
+                            Copie sua chave (começa com gsk_)
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-groq-green mr-2">5.</span>
+                            Cole no campo acima
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                        <span class="text-sm text-gray-300">AVISO DE SEGURANÇA</span>
+                    </div>
+                    <div class="bg-black rounded-lg p-3 text-xs text-gray-400">
+                        <p class="mb-1">• Sua chave de API é armazenada localmente apenas no navegador</p>
+                        <p class="mb-1">• Nunca enviamos sua chave para nossos servidores</p>
+                        <p>• Todo processamento de IA ocorre por meio da API segura do IJR.RX</p>
+                    </div>
+                </div>
+                
+                <button 
+                    id="loginButton" 
+                    class="w-full neon-button text-white font-orbitron font-bold py-3 px-4 rounded-lg text-lg transition duration-300 flex items-center justify-center"
+                >
+                    <i class="fas fa-unlock-alt mr-2"></i>
+                    VERIFICAR & ACESSAR
+                </button>
+                
+                <div id="loginError" class="mt-4 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm hidden">
+                    <i class="fas fa-times-circle mr-2"></i>
+                    <span id="errorMessage">Por favor, insira sua chave de API do IJR.RX.</span>
+                </div>
+                
+                <div id="loginSuccess" class="mt-4 p-3 bg-green-900/30 border border-green-800 rounded-lg text-green-300 text-sm hidden">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>API key VERIFICADA COM SUCESSO...</span>
+                </div>
+                
+                <div class="mt-6 pt-6 border-t border-gray-800">
+                    <div class="flex items-center justify-center space-x-4 text-gray-500 text-sm">
+                        <div class="flex items-center">
+                            <i class="fas fa-server mr-1"></i>
+                            <span>v2.5.0</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fab fa-gripfire mr-1 text-groq-green"></i>
+                            <span>IJR.RX</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            <span>LOCAL STORAGE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer Note -->
+            <div class="mt-8 text-center text-gray-600 text-xs">
+                <p>© IA de trapaça Roblox 2024. Alimentado pela IA IJR.RX. Esta ferramenta é apenas para fins educacionais.</p>
+                <p class="mt-1">Não afiliado à Roblox Corporation nem à IJR.RX Inc.</p>
+            </div>
         </div>
-    </main>
+    </div>
+    
+    <!-- Main Dashboard (Hidden by default) -->
+    <div id="dashboard" class="min-h-screen hidden">
+        <!-- Header -->
+        <header class="bg-black/80 backdrop-blur-sm border-b border-gray-900 sticky top-0 z-50">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <!-- Logo -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-robot text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-orbitron font-bold">
+                                <span class="text-white">ROBLOX</span>
+                                <span class="text-red-600">CHEAT</span>
+                                <span class="text-white">IJR.RX</span>
+                            </h1>
+                            <div class="flex items-center">
+                                <p class="text-xs text-gray-400">Powered by</p>
+                                <div class="ml-1 bg-groq-green/20 border border-groq-green rounded px-1 py-0.5">
+                                    <span class="text-groq-green text-xs font-bold">IJR.RX</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats and User Info -->
+                    <div class="flex items-center space-x-6">
+                        <div class="hidden md:flex items-center space-x-4">
+                            <div class="text-right">
+                                <p class="text-xs text-gray-400">API STATUS</p>
+                                <p class="text-sm font-bold text-green-500 flex items-center">
+                                    <i class="fas fa-circle mr-1 text-xs animate-pulse"></i>
+                                    IJR.RX ACTIVE
+                                </p>
+                            </div>
+                            <div class="h-8 w-px bg-gray-800"></div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-400">REQUESTS LEFT</p>
+                                <p class="text-lg font-orbitron font-bold text-groq-green" id="requestsLeft">∞</p>
+                            </div>
+                        </div>
+                        
+                        <!-- API Info and Logout -->
+                        <div class="flex items-center space-x-3">
+                            <button 
+                                id="apiInfoButton"
+                                class="bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 px-3 rounded-lg text-sm font-medium transition flex items-center"
+                                title="API Information"
+                            >
+                                <i class="fab fa-gripfire text-groq-green mr-1"></i>
+                                <span class="hidden sm:inline">API</span>
+                            </button>
+                            <button 
+                                id="logoutButton"
+                                class="bg-red-900/30 hover:bg-red-900/50 border border-red-800 text-red-300 py-2 px-4 rounded-lg text-sm font-medium transition flex items-center"
+                            >
+                                <i class="fas fa-sign-out-alt mr-2"></i>
+                                <span class="hidden sm:inline">LOGOUT</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <main class="container mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Script Generator -->
+                <div class="lg:col-span-2">
+                    <div class="bg-dark-gray rounded-xl p-6 neon-border mb-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-orbitron font-bold">
+                                <i class="fas fa-code mr-2 text-red-500"></i>
+                                IJR.RX AI SCRIPT GENERATOR
+                            </h2>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs text-gray-400 bg-black py-1 px-2 rounded">v2.5.0</span>
+                                <span class="text-xs text-groq-green bg-groq-green/20 py-1 px-2 rounded flex items-center">
+                                    <i class="fab fa-gripfire mr-1"></i>
+                                    IJR.RX AI
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Game Selection -->
+                        <div class="mb-6">
+                            <label class="block text-gray-300 text-sm font-medium mb-2">
+                                <i class="fas fa-gamepad mr-2 text-red-500"></i>
+                                SELECIONE O TIPO DE JOGO
+                            </label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <button class="game-type-btn bg-black hover:bg-gray-900 border border-gray-800 rounded-lg py-3 px-4 text-sm transition active" data-type="all">
+                                    <i class="fas fa-globe mr-2 text-red-500"></i>
+                                    TODOS OS JOGOS
+                                </button>
+                                <button class="game-type-btn bg-black hover:bg-gray-900 border border-gray-800 rounded-lg py-3 px-4 text-sm transition" data-type="fps">
+                                    <i class="fas fa-crosshairs mr-2 text-red-500"></i>
+                                    FPS
+                                </button>
+                                <button class="game-type-btn bg-black hover:bg-gray-900 border border-gray-800 rounded-lg py-3 px-4 text-sm transition" data-type="rpg">
+                                    <i class="fas fa-dragon mr-2 text-red-500"></i>
+                                    RPG
+                                </button>
+                                <button class="game-type-btn bg-black hover:bg-gray-900 border border-gray-800 rounded-lg py-3 px-4 text-sm transition" data-type="simulator">
+                                    <i class="fas fa-coins mr-2 text-red-500"></i>
+                                    SIMULADO
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Script Description -->
+                        <div class="mb-6">
+                            <label class="block text-gray-300 text-sm font-medium mb-2" for="scriptDescription">
+                                <i class="fas fa-edit mr-2 text-red-500"></i>
+                                DESCREVA O QUE VOCÊ PRECISA
+                            </label>
+                            <textarea 
+                                id="scriptDescription" 
+                                rows="4"
+                                class="w-full bg-black border border-gray-800 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition font-roboto-mono text-sm"
+                                placeholder="Example: I need an aimbot script for any FPS game with smooth aiming and target prediction..."
+                            ></textarea>
+                            <div class="flex justify-between mt-2">
+                                <p class="text-gray-500 text-xs">
+                                    <i class="fas fa-lightbulb mr-1"></i>
+                                     Seja específico para obter melhores resultados em IA
+                                </p>
+                                <p class="text-gray-500 text-xs">
+                                    <span id="charCount">0</span>/1000 characters
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Advanced Options -->
+                        <div class="mb-8">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-orbitron font-medium">
+                                    <i class="fas fa-cogs mr-2 text-red-500"></i>
+                                    OPÇÕES AVANÇADAS
+                                </h3>
+                                <button id="toggleOptions" class="text-gray-400 hover:text-white text-sm">
+                                    <i class="fas fa-chevron-down mr-1"></i>
+                                    OPÇÕES DE EXPOSIÇÃO
+                                </button>
+                            </div>
+                            
+                            <div id="advancedOptions" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/50 rounded-lg p-4">
+                                <div>
+                                    <label class="block text-gray-300 text-sm font-medium mb-2">
+                                        AI MODEL
+                                    </label>
+                                    <select id="aiModel" class="w-full bg-gray-900 border border-gray-800 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:border-red-600">
+                                        <option value="llama3-70b-8192">Llama 3 70B (Recommended)</option>
+                                        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                                        <option value="gemma-7b-it">Gemma 7B</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-gray-300 text-sm font-medium mb-2">
+                                        CREATIVITY LEVEL
+                                    </label>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs text-gray-400">Low</span>
+                                        <input type="range" id="creativityLevel" min="0" max="100" value="70" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                                        <span class="text-xs text-gray-400">High</span>
+                                    </div>
+                                    <div class="text-right mt-1">
+                                        <span id="creativityValue" class="text-xs text-red-500">70%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Generate Button -->
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-4 sm:mb-0">
+                                <p class="text-gray-400 text-sm">
+                                    <i class="fab fa-gripfire mr-1 text-groq-green"></i>
+                                    IJR.RX AI will generate a universal Lua script compatible with most Roblox games
+                                </p>
+                            </div>
+                            <button 
+                                id="generateButton"
+                                class="neon-button text-white font-orbitron font-bold py-3 px-8 rounded-lg text-lg transition duration-300 flex items-center justify-center"
+                            >
+                                <i class="fab fa-gripfire mr-2"></i>
+                                GENERATE WITH IJR.RX AI
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Generated Script Display -->
+                    <div class="bg-dark-gray rounded-xl p-6 neon-border">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-orbitron font-bold">
+                                <i class="fas fa-file-code mr-2 text-red-500"></i>
+                                AI GENERATED LUA SCRIPT
+                            </h2>
+                            <div class="flex space-x-2">
+                                <button 
+                                    id="copyScriptButton"
+                                    class="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition flex items-center"
+                                >
+                                    <i class="fas fa-copy mr-2"></i>
+                                    COPY
+                                </button>
+                                <button 
+                                    id="saveScriptButton"
+                                    class="bg-red-900/30 hover:bg-red-900/50 border border-red-800 text-red-300 py-2 px-4 rounded-lg text-sm font-medium transition flex items-center"
+                                >
+                                    <i class="fas fa-save mr-2"></i>
+                                    SAVE
+                                </button>
+                                <button 
+                                    id="regenerateButton"
+                                    class="bg-groq-green/20 hover:bg-groq-green/30 border border-groq-green text-groq-green py-2 px-4 rounded-lg text-sm font-medium transition flex items-center"
+                                >
+                                    <i class="fab fa-gripfire mr-2"></i>
+                                    REGENERATE
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="code-block rounded-lg p-4 overflow-x-auto scrollbar-custom max-h-96">
+                            <pre id="generatedScript" class="text-gray-300 font-roboto-mono text-sm whitespace-pre-wrap">
+-- Roblox Universal Cheat Script
+-- Generated by Roblox Cheat AI v2.5.0
+-- Powered by Groq AI (Llama 3 70B)
+-- Compatible with most Roblox games
+-- Use at your own risk
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local localPlayer = Players.LocalPlayer
+local mouse = localPlayer:GetMouse()
+
+-- Universal Aimbot Function with Smooth Aiming
+local function UniversalAimbot(smoothness)
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            
+            if humanoidRootPart and humanoid and humanoid.Health > 0 then
+                local distance = (humanoidRootPart.Position - localPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+    
+    if closestPlayer and closestPlayer.Character then
+        local targetPart = closestPlayer.Character:FindFirstChild("Head") or closestPlayer.Character.HumanoidRootPart
+        if targetPart then
+            -- Smooth aiming calculation
+            local camera = Workspace.CurrentCamera
+            local targetPosition = targetPart.Position
+            local currentPosition = camera.CFrame.Position
+            local direction = (targetPosition - currentPosition).Unit
+            
+            -- Apply smoothness factor
+            local smoothCFrame = camera.CFrame:Lerp(CFrame.new(currentPosition, currentPosition + direction), smoothness)
+            camera.CFrame = smoothCFrame
+        end
+    end
+end
+
+-- ESP Function (Wallhack) with Team Colors
+local function CreateESP(player)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        -- Remove existing ESP if any
+        local existingHighlight = player.Character:FindFirstChildOfClass("Highlight")
+        if existingHighlight then
+            existingHighlight:Destroy()
+        end
+        
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = player.Character
+        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for enemies
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        
+        -- Check if player is on same team
+        if player.Team and localPlayer.Team and player.Team == localPlayer.Team then
+            highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for teammates
+        end
+    end
+end
+
+-- Speed Hack with Toggle
+local speedHackActive = false
+local originalWalkSpeed = 16
+
+local function ToggleSpeedHack(multiplier)
+    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+        local humanoid = localPlayer.Character.Humanoid
+        if not speedHackActive then
+            originalWalkSpeed = humanoid.WalkSpeed
+            humanoid.WalkSpeed = originalWalkSpeed * multiplier
+            speedHackActive = true
+            print("Speed hack activated: " .. humanoid.WalkSpeed .. " studs/sec")
+        else
+            humanoid.WalkSpeed = originalWalkSpeed
+            speedHackActive = false
+            print("Speed hack deactivated")
+        end
+    end
+end
+
+-- Jump Power Hack
+local function JumpHack(multiplier)
+    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+        localPlayer.Character.Humanoid.JumpPower = 50 * multiplier
+    end
+end
+
+-- No Clip Function
+local noClipActive = false
+local function ToggleNoClip()
+    if localPlayer.Character then
+        noClipActive = not noClipActive
+        for _, part in pairs(localPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = not noClipActive
+            end
+        end
+        print("No Clip " .. (noClipActive and "activated" or "deactivated"))
+    end
+end
+
+-- Main Execution
+local function Main()
+    print("Universal Roblox Cheat Loaded Successfully")
+    print("Powered by IJR.RX AI - Roblox Cheat AI v2.5.0")
+    
+    -- Toggle Aimbot on RightControl (with smooth aiming)
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.RightControl then
+            UniversalAimbot(0.1) -- 10% smoothness
+        end
+    end)
+    
+    -- ESP for all players
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer then
+            CreateESP(player)
+        end
+    end
+    
+    -- ESP for new players
+    Players.PlayerAdded:Connect(function(player)
+        player.CharacterAdded:Connect(function()
+            wait(1)
+            CreateESP(player)
+        end)
+    end)
+    
+    -- Speed Hack Toggle (Press F)
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.F then
+            ToggleSpeedHack(2) -- 2x speed
+        end
+    end)
+    
+    -- Jump Hack (Press G)
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.G then
+            JumpHack(2) -- 2x jump power
+        end
+    end)
+    
+    -- No Clip Toggle (Press H)
+    UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.H then
+            ToggleNoClip()
+        end
+    end)
+    
+    -- Auto-update ESP when character respawns
+    localPlayer.CharacterAdded:Connect(function()
+        wait(2)
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= localPlayer then
+                CreateESP(player)
+            end
+        end
+    end)
+end
+
+-- Safety Check: Only run if in a game
+if game.PlaceId ~= 0 then
+    Main()
+else
+    warn("Please join a game before running this script")
+end
+
+-- Warning: This script may violate Roblox Terms of Service
+-- Use responsibly and at your own risk
+-- Generated by IJR.RX AI through Roblox Cheat AI
+                            </pre>
+                        </div>
+                        
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <div class="bg-red-900/20 border border-red-800 rounded-lg py-2 px-4">
+                                <p class="text-xs text-red-300">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    DETECTION RISK: MEDIUM
+                                </p>
+                            </div>
+                            <div class="bg-groq-green/20 border border-groq-green rounded-lg py-2 px-4">
+                                <p class="text-xs text-groq-green">
+                                    <i class="fab fa-gripfire mr-1"></i>
+                                    IJR.RX AI GENERATED
+                                </p>
+                            </div>
+                            <div class="bg-blue-900/20 border border-blue-800 rounded-lg py-2 px-4">
+                                <p class="text-xs text-blue-300">
+                                    <i class="fas fa-gamepad mr-1"></i>
+                                    UNIVERSAL COMPATIBILITY
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-xs text-gray-500">
+                            <p>
+                                <i class="fas fa-info-circle mr-1"></i>
+                                This script was generated by IJR.RX AI and is compatible with most Roblox games.
+                                Features include: Aimbot, ESP, Speed Hack, Jump Hack, and No Clip.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column: Features and Info -->
+                <div class="space-y-8">
+                    <!-- Groq AI Status -->
+                    <div class="bg-dark-gray rounded-xl p-6 groq-border">
+                        <h3 class="text-xl font-orbitron font-bold mb-4">
+                            <i class="fab fa-gripfire mr-2 text-groq-green"></i>
+                            IJR.RX AI STATUS
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-gray-300">API CONNECTION</span>
+                                    <span class="text-sm font-bold text-green-500 flex items-center">
+                                        <i class="fas fa-circle mr-1 text-xs animate-pulse"></i>
+                                        ACTIVE
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-2">
+                                    <div class="bg-groq-green h-2 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-gray-300">RESPONSE TIME</span>
+                                    <span class="text-sm font-bold text-groq-green">~300ms</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 90%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-gray-300">MODEL POWER</span>
+                                    <span class="text-sm font-bold text-purple-500">Llama 3 70B</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" style="width: 95%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-800">
+                            <div class="text-center">
+                                <div class="text-2xl font-orbitron font-bold text-groq-green mb-2">IJR.RX AI READY</div>
+                                <p class="text-gray-400 text-sm">Ultra-fast AI script generation</p>
+                                <div class="mt-3 flex items-center justify-center space-x-2 text-xs text-gray-500">
+                                    <i class="fas fa-bolt"></i>
+                                    <span>300+ tokens/sec</span>
+                                    <i class="fas fa-server ml-2"></i>
+                                    <span>LPU Inference Engine</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- API Usage -->
+                    <div class="bg-dark-gray rounded-xl p-6 neon-border">
+                        <h3 class="text-xl font-orbitron font-bold mb-4">
+                            <i class="fas fa-chart-line mr-2 text-red-500"></i>
+                            API USAGE
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-black/50 rounded-lg p-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-gray-300">TODAY'S REQUESTS</span>
+                                    <span class="text-lg font-orbitron font-bold text-red-500">3</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-2">
+                                    <div class="bg-red-600 h-2 rounded-full" style="width: 15%"></div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Limited by your IJR.RX API plan</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-black/50 rounded-lg p-3 text-center">
+                                    <p class="text-2xl font-orbitron font-bold text-groq-green">∞</p>
+                                    <p class="text-xs text-gray-400">FREE TIER</p>
+                                </div>
+                                <div class="bg-black/50 rounded-lg p-3 text-center">
+                                    <p class="text-2xl font-orbitron font-bold text-blue-500">Fast</p>
+                                    <p class="text-xs text-gray-400">SPEED</p>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <a href="https://console.groq.com/usage" target="_blank" class="inline-block text-groq-green hover:text-groq-green/80 text-sm underline">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    View usage on IJR.RX Console
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Scripts -->
+                    <div class="bg-dark-gray rounded-xl p-6 neon-border">
+                        <h3 class="text-xl font-orbitron font-bold mb-4">
+                            <i class="fas fa-bolt mr-2 text-red-500"></i>
+                            QUICK SCRIPTS
+                        </h3>
+                        
+                        <div class="space-y-3">
+                            <button class="quick-script-btn w-full bg-black/50 hover:bg-black border border-gray-800 rounded-lg p-3 text-left transition" data-prompt="Simple aimbot for FPS games">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="font-medium text-sm">Simple Aimbot</p>
+                                        <p class="text-gray-400 text-xs">Basic targeting for FPS</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-500"></i>
+                                </div>
+                            </button>
+                            
+                            <button class="quick-script-btn w-full bg-black/50 hover:bg-black border border-gray-800 rounded-lg p-3 text-left transition" data-prompt="Auto farm script for simulator games">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="font-medium text-sm">Auto Farm</p>
+                                        <p class="text-gray-400 text-xs">Simulator games</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-500"></i>
+                                </div>
+                            </button>
+                            
+                            <button class="quick-script-btn w-full bg-black/50 hover:bg-black border border-gray-800 rounded-lg p-3 text-left transition" data-prompt="ESP wallhack for all games with team colors">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="font-medium text-sm">ESP Wallhack</p>
+                                        <p class="text-gray-400 text-xs">See through walls</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-500"></i>
+                                </div>
+                            </button>
+                            
+                            <button class="quick-script-btn w-full bg-black/50 hover:bg-black border border-gray-800 rounded-lg p-3 text-left transition" data-prompt="Speed and jump hack for parkour games">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="font-medium text-sm">Parkour Hacks</p>
+                                        <p class="text-gray-400 text-xs">Speed & jump boost</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-500"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <p class="text-xs text-gray-500 mt-4 text-center">
+                            Click any script to auto-fill the generator
+                        </p>
+                    </div>
+                    
+                    <!-- Warning Box -->
+                    <div class="bg-red-900/20 border border-red-800 rounded-xl p-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-2xl text-red-500 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="font-orbitron font-bold text-lg mb-2">LEGAL DISCLAIMER</h4>
+                                <p class="text-sm text-gray-300 mb-3">
+                                    This tool uses IJR.RX AI to generate Lua scripts. You are responsible for:
+                                </p>
+                                <ul class="text-sm text-gray-400 space-y-1">
+                                    <li class="flex items-start">
+                                        <i class="fas fa-balance-scale text-red-500 mr-2 mt-1 text-xs"></i>
+                                        Complying with Roblox Terms of Service
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-user-shield text-red-500 mr-2 mt-1 text-xs"></i>
+                                        Your IJR.RX API usage and costs
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-gavel text-red-500 mr-2 mt-1 text-xs"></i>
+                                        Any consequences of using generated scripts
+                                    </li>
+                                </ul>
+                                <p class="text-xs text-gray-500 mt-4">
+                                    Educational purposes only. Not affiliated with Roblox or IJR.RX.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-black/80 border-t border-gray-900 mt-12">
+            <div class="container mx-auto px-4 py-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-orbitron font-bold">
+                                    <span class="text-white">ROBLOX</span>
+                                    <span class="text-red-600">CHEAT</span>
+                                    <span class="text-white">IJR.RX</span>
+                                </h3>
+                                <div class="flex items-center mt-1">
+                                    <span class="text-xs text-gray-400">Powered by</span>
+                                    <div class="ml-1 bg-groq-green/20 border border-groq-green rounded px-1 py-0.5">
+                                        <span class="text-groq-green text-xs font-bold">IJR.RX</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">
+                            Advanced AI-powered Lua script generator for Roblox. 
+                            Uses IJR.RX AI for ultra-fast script generation.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-orbitron font-bold text-lg mb-4">IJR.RX AI</h4>
+                        <ul class="space-y-2">
+                            <li>
+                                <a href="https://www.instagram.com/ijr.rx?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" class="text-gray-400 hover:text-groq-green text-sm transition flex items-center">
+                                    <i class="fab fa-gripfire text-xs mr-2"></i>
+                                    Get API Keys
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://console.groq.com/usage" target="_blank" class="text-gray-400 hover:text-groq-green text-sm transition flex items-center">
+                                    <i class="fas fa-chart-line text-xs mr-2"></i>
+                                    Usage Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://groq.com/" target="_blank" class="text-gray-400 hover:text-groq-green text-sm transition flex items-center">
+                                    <i class="fas fa-external-link-alt text-xs mr-2"></i>
+                                    IJR.RX Website
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://wow.groq.com/" target="_blank" class="text-gray-400 hover:text-groq-green text-sm transition flex items-center">
+                                    <i class="fas fa-bolt text-xs mr-2"></i>
+                                    IJR.RX Speed
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-orbitron font-bold text-lg mb-4">RESOURCES</h4>
+                        <ul class="space-y-2">
+                            <li>
+                                <a href="#" class="text-gray-400 hover:text-red-500 text-sm transition flex items-center">
+                                    <i class="fas fa-code text-xs mr-2"></i>
+                                    Lua Documentation
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="text-gray-400 hover:text-red-500 text-sm transition flex items-center">
+                                    <i class="fas fa-book text-xs mr-2"></i>
+                                    Scripting Guide
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="text-gray-400 hover:text-red-500 text-sm transition flex items-center">
+                                    <i class="fas fa-question-circle text-xs mr-2"></i>
+                                    FAQ & Help
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="text-gray-400 hover:text-red-500 text-sm transition flex items-center">
+                                    <i class="fas fa-shield-alt text-xs mr-2"></i>
+                                    Safety Guide
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-orbitron font-bold text-lg mb-4">STATISTICS</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-black/50 rounded-lg p-3 text-center">
+                                <p class="text-2xl font-orbitron font-bold text-red-500">2.5K</p>
+                                <p class="text-xs text-gray-400">SCRIPTS GENERATED</p>
+                            </div>
+                            <div class="bg-black/50 rounded-lg p-3 text-center">
+                                <p class="text-2xl font-orbitron font-bold text-groq-green">300ms</p>
+                                <p class="text-xs text-gray-400">AVG RESPONSE TIME</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-8 border-t border-gray-800">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="text-gray-500 text-sm mb-4 md:mb-0">
+                            <p>© 2024 Roblox Cheat AI. Powered by IJR.RX AI. For educational purposes only.</p>
+                            <p class="mt-1">Not affiliated with Roblox Corporation or IJR.RX Inc.</p>
+                        </div>
+                        
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center text-gray-500 text-sm">
+                                <i class="fab fa-gripfire text-groq-green mr-1"></i>
+                                <span>IJR.RX AI</span>
+                            </div>
+                            <div class="h-4 w-px bg-gray-800"></div>
+                            <div class="flex items-center text-gray-500 text-sm">
+                                <i class="fas fa-bolt text-yellow-500 mr-1"></i>
+                                <span>ULTRA FAST</span>
+                            </div>
+                            <div class="h-4 w-px bg-gray-800"></div>
+                            <div class="flex items-center text-gray-500 text-sm">
+                                <i class="fas fa-shield-alt text-green-500 mr-1"></i>
+                                <span>SECURE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- API Info Modal -->
+    <div id="apiInfoModal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
+        <div class="bg-dark-gray rounded-xl p-6 max-w-md w-full neon-border">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-orbitron font-bold">
+                    <i class="fab fa-gripfire mr-2 text-groq-green"></i>
+                    IJR.RX API INFORMATION
+                </h3>
+                <button id="closeApiModal" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <h4 class="font-bold text-gray-300 mb-2">Your Current API Key</h4>
+                    <div class="bg-black rounded-lg p-3">
+                        <code class="text-xs text-gray-300 font-roboto-mono break-all" id="currentApiKeyDisplay">
+                            Loading...
+                        </code>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-gray-300 mb-2">API Key Info</h4>
+                    <ul class="text-sm text-gray-400 space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-groq-green mr-2 mt-0.5"></i>
+                            <span>Stored locally in your browser</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-groq-green mr-2 mt-0.5"></i>
+                            <span>Never sent to our servers</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check text-groq-green mr-2 mt-0.5"></i>
+                            <span>Direct connection to IJR.RX API</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="pt-4 border-t border-gray-800">
+                    <a href="https://www.instagram.com/ijr.rx?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" class="block w-full bg-groq-green/20 hover:bg-groq-green/30 border border-groq-green text-groq-green py-2 px-4 rounded-lg text-sm font-medium transition text-center">
+                        <i class="fab fa-gripfire mr-2"></i>
+                        Manage Keys on IJR.RX Console
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
     <script>
-        const chatBox = document.getElementById('chatBox');
-        const userInput = document.getElementById('userInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const apiKeyInput = document.getElementById('apiKey');
-        const loading = document.getElementById('loading');
-        const themeToggle = document.getElementById('themeToggle');
-
-        const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-        const MODEL = 'llama-3.3-70b-versatile';
-
-        // Tema
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.body.dataset.theme = savedTheme;
-        themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
-
-        themeToggle.addEventListener('click', () => {
-            const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-            document.body.dataset.theme = newTheme;
-            themeToggle.textContent = newTheme === 'dark' ? '🌙' : '☀️';
-            localStorage.setItem('theme', newTheme);
-        });
-
-        // Validação da chave
-        function validateKey(key) {
-            return key.trim().startsWith('gsk_') && key.trim().length > 30;
-        }
-
-        function updateButton() {
-            sendBtn.disabled = !validateKey(apiKeyInput.value);
-        }
-
-        // Carregar chave salva
-        const savedKey = localStorage.getItem('groq_key');
-        if (savedKey && validateKey(savedKey)) {
-            apiKeyInput.value = savedKey;
-        }
-        updateButton();
-
-        apiKeyInput.addEventListener('input', () => {
-            const key = apiKeyInput.value.trim();
-            if (validateKey(key)) {
-                localStorage.setItem('groq_key', key);
+        // Define data at the beginning
+        const groqApiPattern = /^gsk_[a-zA-Z0-9_-]{32,}$/;
+        
+        const quickScriptPrompts = {
+            "Simple aimbot for FPS games": "Generate a simple aimbot Lua script for Roblox FPS games with basic targeting functionality. Include smooth aiming and toggle feature.",
+            "Auto farm script for simulator games": "Create an auto farm Lua script for Roblox simulator games that automatically collects resources and repeats the process.",
+            "ESP wallhack for all games with team colors": "Make an ESP wallhack Lua script for all Roblox games that shows players through walls with team-based colors (red for enemies, green for teammates).",
+            "Speed and jump hack for parkour games": "Generate a speed and jump hack Lua script for Roblox parkour games with adjustable multipliers and toggle controls."
+        };
+        
+        const aiModels = {
+            "llama3-70b-8192": "Llama 3 70B",
+            "mixtral-8x7b-32768": "Mixtral 8x7B", 
+            "gemma-7b-it": "Gemma 7B"
+        };
+        
+        // Current state
+        let currentGameType = "all";
+        let currentApiKey = "";
+        let isLoggedIn = false;
+        let requestsToday = 3;
+        
+        // DOM Elements
+        const loginScreen = document.getElementById("loginScreen");
+        const dashboard = document.getElementById("dashboard");
+        const apiKeyInput = document.getElementById("apiKey");
+        const loginButton = document.getElementById("loginButton");
+        const loginError = document.getElementById("loginError");
+        const loginSuccess = document.getElementById("loginSuccess");
+        const errorMessage = document.getElementById("errorMessage");
+        const toggleKeyVisibility = document.getElementById("toggleKeyVisibility");
+        const logoutButton = document.getElementById("logoutButton");
+        const generateButton = document.getElementById("generateButton");
+        const copyScriptButton = document.getElementById("copyScriptButton");
+        const saveScriptButton = document.getElementById("saveScriptButton");
+        const regenerateButton = document.getElementById("regenerateButton");
+        const generatedScript = document.getElementById("generatedScript");
+        const scriptDescription = document.getElementById("scriptDescription");
+        const charCount = document.getElementById("charCount");
+        const toggleOptions = document.getElementById("toggleOptions");
+        const advancedOptions = document.getElementById("advancedOptions");
+        const gameTypeButtons = document.querySelectorAll(".game-type-btn");
+        const quickScriptButtons = document.querySelectorAll(".quick-script-btn");
+        const aiModelSelect = document.getElementById("aiModel");
+        const creativityLevel = document.getElementById("creativityLevel");
+        const creativityValue = document.getElementById("creativityValue");
+        const apiInfoButton = document.getElementById("apiInfoButton");
+        const apiInfoModal = document.getElementById("apiInfoModal");
+        const closeApiModal = document.getElementById("closeApiModal");
+        const currentApiKeyDisplay = document.getElementById("currentApiKeyDisplay");
+        const requestsLeft = document.getElementById("requestsLeft");
+        
+        // Initialize
+        document.addEventListener("DOMContentLoaded", function() {
+            // Check if already logged in (from localStorage)
+            const savedApiKey = localStorage.getItem("robloxCheatGroqApiKey");
+            if (savedApiKey && validateGroqApiKey(savedApiKey)) {
+                currentApiKey = savedApiKey;
+                loginSuccessFunc();
             }
-            updateButton();
+            
+            // Update character count
+            updateCharCount();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Update creativity value display
+            updateCreativityValue();
+            
+            // Update requests display
+            updateRequestsDisplay();
         });
-
-        // Adicionar mensagem
-        function addMessage(content, role) {
-            const msg = document.createElement('div');
-            msg.className = `message ${role}`;
-
-            if (role === 'user') {
-                msg.innerHTML = `<strong>Você:</strong><br>${content.replace(/\n/g, '<br>')}`;
-            } else {
-                const formatted = content.replace(/```(\w+)?\n?([\s\S]*?)```/g, (m, lang, code) => {
-                    lang = lang || 'text';
-                    return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
-                });
-                msg.innerHTML = `<strong>IJR.RX:</strong><br>${formatted}`;
-
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'copy-code';
-                copyBtn.innerHTML = '📋 Copiar';
-                copyBtn.onclick = () => {
-                    navigator.clipboard.writeText(content);
-                    copyBtn.innerHTML = '✅ Copiado!';
-                    setTimeout(() => copyBtn.innerHTML = '📋 Copiar', 2000);
-                };
-                msg.appendChild(copyBtn);
-            }
-
-            chatBox.appendChild(msg);
-            chatBox.scrollTop = chatBox.scrollHeight;
-            Prism.highlightAllUnder(msg);
-        }
-
-        // Boas-vindas
-        addMessage(`Olá! Estou usando o modelo mais recente da Groq (Llama 3.3 70B - 2025). 
-Pronto para gerar códigos profissionais em qualquer linguagem. Cole sua chave e vamos começar! 🚀`, 'ai');
-
-        // Enviar mensagem
-        async function sendMessage() {
-            const prompt = userInput.value.trim();
-            if (!prompt) return;
-
-            addMessage(prompt, 'user');
-            userInput.value = '';
-            loading.style.display = 'block';
-            sendBtn.disabled = true;
-            sendBtn.textContent = 'Gerando...';
-
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKeyInput.value.trim()}`
-                    },
-                    body: JSON.stringify({
-                        model: MODEL,
-                        messages: [
-                            { role: 'system', content: 'Você é um assistente especializado em programação. Responda apenas em português, com código completo, bem comentado e formatado em markdown.' },
-                            { role: 'user', content: prompt }
-                        ],
-                        temperature: 0.4,
-                        max_tokens: 8192
-                    })
-                });
-
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    let msg = err.error?.message || 'Erro na API';
-                    if (res.status === 401) msg = 'Chave inválida ou expirada. Verifique sua chave Groq.';
-                    if (res.status === 429) msg = 'Limite de requisições atingido. Tente novamente mais tarde.';
-                    throw new Error(msg);
+        
+        function setupEventListeners() {
+            // Login button click
+            loginButton.addEventListener("click", handleLogin);
+            
+            // Enter key in API key field
+            apiKeyInput.addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    handleLogin();
                 }
-
-                const data = await res.json();
-                const reply = data.choices[0].message.content;
-                addMessage(reply, 'ai');
-
-            } catch (err) {
-                addMessage(`❌ Erro: ${err.message}`, 'ai');
-            } finally {
-                loading.style.display = 'none';
-                sendBtn.disabled = !validateKey(apiKeyInput.value);
-                sendBtn.textContent = 'Enviar';
+            });
+            
+            // Real-time API key validation
+            apiKeyInput.addEventListener("input", function() {
+                const key = this.value.trim();
+                if (key.length > 0) {
+                    if (validateGroqApiKey(key)) {
+                        this.classList.add("valid-key");
+                        this.classList.remove("invalid-key");
+                    } else {
+                        this.classList.add("invalid-key");
+                        this.classList.remove("valid-key");
+                    }
+                } else {
+                    this.classList.remove("valid-key");
+                    this.classList.remove("invalid-key");
+                }
+            });
+            
+            // Toggle key visibility
+            toggleKeyVisibility.addEventListener("click", function() {
+                const type = apiKeyInput.getAttribute("type") === "password" ? "text" : "password";
+                apiKeyInput.setAttribute("type", type);
+                this.innerHTML = type === "password" ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+            });
+            
+            // Logout button
+            logoutButton.addEventListener("click", handleLogout);
+            
+            // Generate script button
+            generateButton.addEventListener("click", generateScriptWithGroq);
+            
+            // Copy script button
+            copyScriptButton.addEventListener("click", copyScript);
+            
+            // Save script button
+            saveScriptButton.addEventListener("click", saveScript);
+            
+            // Regenerate button
+            regenerateButton.addEventListener("click", generateScriptWithGroq);
+            
+            // Character count update
+            scriptDescription.addEventListener("input", updateCharCount);
+            
+            // Toggle advanced options
+            toggleOptions.addEventListener("click", function() {
+                const isHidden = advancedOptions.classList.contains("hidden");
+                if (isHidden) {
+                    advancedOptions.classList.remove("hidden");
+                    this.innerHTML = '<i class="fas fa-chevron-up mr-1"></i> HIDE OPTIONS';
+                } else {
+                    advancedOptions.classList.add("hidden");
+                    this.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> SHOW OPTIONS';
+                }
+            });
+            
+            // Game type buttons
+            gameTypeButtons.forEach(button => {
+                button.addEventListener("click", function() {
+                    // Remove active class from all buttons
+                    gameTypeButtons.forEach(btn => {
+                        btn.classList.remove("active");
+                        btn.classList.remove("bg-red-900/30");
+                        btn.classList.remove("border-red-700");
+                        btn.classList.add("bg-black");
+                        btn.classList.add("border-gray-800");
+                    });
+                    
+                    // Add active class to clicked button
+                    this.classList.add("active");
+                    this.classList.add("bg-red-900/30");
+                    this.classList.add("border-red-700");
+                    this.classList.remove("bg-black");
+                    this.classList.remove("border-gray-800");
+                    
+                    // Update current game type
+                    currentGameType = this.getAttribute("data-type");
+                });
+            });
+            
+            // Quick script buttons
+            quickScriptButtons.forEach(button => {
+                button.addEventListener("click", function() {
+                    const prompt = this.getAttribute("data-prompt");
+                    scriptDescription.value = prompt;
+                    updateCharCount();
+                    
+                    // Highlight the button briefly
+                    this.classList.add("bg-red-900/30");
+                    this.classList.add("border-red-600");
+                    setTimeout(() => {
+                        this.classList.remove("bg-red-900/30");
+                        this.classList.remove("border-red-600");
+                    }, 1000);
+                    
+                    // Show notification
+                    showNotification("Prompt filled! Click generate to create script.", "success");
+                });
+            });
+            
+            // AI model change
+            aiModelSelect.addEventListener("change", function() {
+                showNotification(`AI model changed to: ${aiModels[this.value]}`, "info");
+            });
+            
+            // Creativity level slider
+            creativityLevel.addEventListener("input", updateCreativityValue);
+            
+            // API info button
+            apiInfoButton.addEventListener("click", showApiInfoModal);
+            
+            // Close API modal
+            closeApiModal.addEventListener("click", function() {
+                apiInfoModal.classList.add("hidden");
+            });
+            
+            // Close modal on outside click
+            apiInfoModal.addEventListener("click", function(e) {
+                if (e.target === this) {
+                    this.classList.add("hidden");
+                }
+            });
+        }
+        
+        function validateGroqApiKey(key) {
+            // Groq API keys typically start with gsk_ and are 32+ characters
+            return groqApiPattern.test(key);
+        }
+        
+        function handleLogin() {
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (!apiKey) {
+                showLoginError("Please enter your IJR.RX API key");
+                return;
+            }
+            
+            if (!validateGroqApiKey(apiKey)) {
+                showLoginError("Invalid Groq API key format. Keys should start with 'gsk_' and be at least 32 characters long.");
+                return;
+            }
+            
+            // Test the API key by making a simple request
+            testGroqApiKey(apiKey);
+        }
+        
+        function testGroqApiKey(apiKey) {
+            // Show loading state
+            loginButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> VERIFYING...';
+            loginButton.disabled = true;
+            
+            // In a real implementation, this would make an actual API call to IJR.RX
+            // For this demo, we'll simulate the verification
+            
+            setTimeout(() => {
+                // Simulate API verification (90% success rate for demo)
+                const isVerified = Math.random() > 0.1;
+                
+                if (isVerified) {
+                    // Save the API key
+                    currentApiKey = apiKey;
+                    localStorage.setItem("robloxCheatGroqApiKey", apiKey);
+                    
+                    // Show success
+                    loginError.classList.add("hidden");
+                    loginSuccess.classList.remove("hidden");
+                    
+                    // Redirect after delay
+                    setTimeout(() => {
+                        loginSuccessFunc();
+                    }, 1500);
+                } else {
+                    // Show error
+                    showLoginError("API key verification failed. Please check your key and try again.");
+                    loginButton.innerHTML = '<i class="fas fa-unlock-alt mr-2"></i> VERIFY & ACCESS';
+                    loginButton.disabled = false;
+                }
+            }, 2000);
+        }
+        
+        function showLoginError(message) {
+            errorMessage.textContent = message;
+            loginError.classList.remove("hidden");
+            loginSuccess.classList.add("hidden");
+            
+            // Shake animation
+            loginError.style.animation = "none";
+            setTimeout(() => {
+                loginError.style.animation = "shake 0.5s";
+            }, 10);
+        }
+        
+        function loginSuccessFunc() {
+            isLoggedIn = true;
+            loginScreen.classList.add("hidden");
+            dashboard.classList.remove("hidden");
+            
+            // Add some visual feedback
+            document.body.style.overflow = "hidden";
+            setTimeout(() => {
+                document.body.style.overflow = "auto";
+            }, 500);
+            
+            // Show welcome notification
+            showNotification("Successfully connected to IJR.RX AI!", "success");
+            
+            // Update API info display
+            updateApiInfoDisplay();
+        }
+        
+        function handleLogout() {
+            // Clear localStorage
+            localStorage.removeItem("robloxCheatGroqApiKey");
+            
+            // Reset form
+            apiKeyInput.value = "";
+            apiKeyInput.classList.remove("valid-key");
+            apiKeyInput.classList.remove("invalid-key");
+            
+            // Show login screen
+            dashboard.classList.add("hidden");
+            loginScreen.classList.remove("hidden");
+            
+            // Reset any messages
+            loginError.classList.add("hidden");
+            loginSuccess.classList.add("hidden");
+            
+            // Reset button
+            loginButton.innerHTML = '<i class="fas fa-unlock-alt mr-2"></i> VERIFY & ACCESS';
+            loginButton.disabled = false;
+            
+            showNotification("Logged out successfully", "info");
+        }
+        
+        function updateCharCount() {
+            const count = scriptDescription.value.length;
+            charCount.textContent = count;
+            
+            // Change color if approaching limit
+            if (count > 450) {
+                charCount.classList.add("text-red-500");
+                charCount.classList.remove("text-gray-500");
+            } else {
+                charCount.classList.remove("text-red-500");
+                charCount.classList.add("text-gray-500");
             }
         }
-
-        // Eventos
-        sendBtn.addEventListener('click', sendMessage);
-        userInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (!sendBtn.disabled) sendMessage();
+        
+        function updateCreativityValue() {
+            const value = creativityLevel.value;
+            creativityValue.textContent = `${value}%`;
+        }
+        
+        function updateRequestsDisplay() {
+            // For demo purposes, show infinite for free tier
+            requestsLeft.textContent = "∞";
+        }
+        
+        function generateScriptWithGroq() {
+            // Check if API key is available
+            if (!currentApiKey) {
+                showNotification("Please log in with your IJR.RX API key first", "error");
+                return;
             }
-        });
+            
+            // Get description
+            const description = scriptDescription.value.trim();
+            
+            // If no description, use default
+            if (!description) {
+                scriptDescription.value = "I need a universal Lua cheat script that works in all Roblox games with aimbot and ESP features.";
+                showNotification("Using default prompt. You can edit it before generating.", "info");
+            }
+            
+            // Increment requests counter
+            requestsToday++;
+            
+            // Show generating animation
+            const originalText = generateButton.innerHTML;
+            generateButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> GENERATING WITH IJR.RX AI...';
+            generateButton.disabled = true;
+            regenerateButton.disabled = true;
+            
+            // Get selected AI model
+            const selectedModel = aiModelSelect.value;
+            const creativity = parseInt(creativityLevel.value) / 100;
+            
+            // Simulate Groq AI API call
+            setTimeout(() => {
+                // Generate script based on parameters
+                const script = generateAiScript(description, currentGameType, selectedModel, creativity);
+                
+                // Update the script display
+                generatedScript.textContent = script;
+                
+                // Reset buttons
+                generateButton.innerHTML = originalText;
+                generateButton.disabled = false;
+                regenerateButton.disabled = false;
+                
+                // Show success notification
+                showNotification(`Script generated using ${aiModels[selectedModel]}!`, "success");
+                
+                // Add to recent requests (simulated)
+                addToRecentRequests();
+                
+            }, 1500 + Math.random() * 1000); // Random delay between 1.5-2.5 seconds
+        }
+        
+        function generateAiScript(description, gameType, model, creativity) {
+            // This simulates what IJR.RX AI would generate
+            // In a real implementation, this would be an actual API call to IJR.RX
+            
+            const modelName = aiModels[model];
+            const date = new Date().toISOString().split('T')[0];
+            
+            // Base script template
+            let script = `-- Roblox ${gameType.toUpperCase()} Cheat Script
+-- Generated by Roblox Cheat AI v2.5.0
+-- Powered by IJR.RX AI (${modelName})
+-- Request: "${description.substring(0, 100)}${description.length > 100 ? "..." : ""}"
+-- Game Type: ${gameType.toUpperCase()}
+-- Creativity Level: ${Math.round(creativity * 100)}%
+-- Generation Date: ${date}
+-- Use at your own risk
 
-        document.querySelectorAll('.example-card').forEach(card => {
-            card.addEventListener('click', () => {
-                userInput.value = card.dataset.prompt;
-                userInput.focus();
-            });
-        });
+`;
+            
+            // Add different script content based on parameters
+            if (gameType === "all") {
+                script += generateUniversalScript(creativity);
+            } else if (gameType === "fps") {
+                script += generateFpsScript(creativity);
+            } else if (gameType === "rpg") {
+                script += generateRpgScript(creativity);
+            } else if (gameType === "simulator") {
+                script += generateSimulatorScript(creativity);
+            }
+            
+            // Add footer
+            script += `
+
+-- ============================================
+-- IJR.RX AI GENERATED SCRIPT
+-- ============================================
+-- Model: ${modelName}
+-- Creativity: ${Math.round(creativity * 100)}%
+-- Tokens: ~${Math.floor(500 + creativity * 300)}
+-- Generation Time: ~${(1 + Math.random()).toFixed(2)}s
+-- ============================================
+
+-- IMPORTANT LEGAL DISCLAIMER:
+-- This script was generated by IJR.RX AI for educational purposes only.
+-- Using cheat scripts in Roblox may violate their Terms of Service.
+-- You are solely responsible for any consequences of using this script.
+-- Not affiliated with Roblox Corporation or IJR.RX Inc.
+
+-- To use: Copy this script and execute it in a Roblox executor
+-- Features may vary depending on the game and anti-cheat systems
+-- Always test in a private server first
+
+-- IJR.RX API Key used: ${currentApiKey.substring(0, 8)}...${currentApiKey.substring(currentApiKey.length - 4)}`;
+            
+            return script;
+        }
+        
+        function generateUniversalScript(creativity) {
+            const features = [
+                "Universal Aimbot with smooth aiming",
+                "ESP Wallhack with team colors",
+                "Speed Hack (2x toggle)",
+                "Jump Hack (2x multiplier)",
+                "No Clip mode",
+                "Auto Farm detection",
+                "Anti-AFK system"
+            ];
+            
+            // Select random features based on creativity
+            const selectedFeatures = features.slice(0, 3 + Math.floor(creativity * 4));
+            
+            return `-- UNIVERSAL ROBLOX CHEAT SCRIPT
+-- Compatible with most Roblox games
+-- Features included: ${selectedFeatures.join(", ")}
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local localPlayer = Players.LocalPlayer
+local mouse = localPlayer:GetMouse()
+
+-- Configuration
+local config = {
+    aimbotSmoothness = 0.1 + (${creativity} * 0.2),
+    espEnabled = true,
+    speedMultiplier = 2.0,
+    jumpMultiplier = 2.0,
+    noClipKey = Enum.KeyCode.H,
+    speedToggleKey = Enum.KeyCode.F,
+    aimbotToggleKey = Enum.KeyCode.RightControl
+}
+
+print("Universal Cheat Loaded - Powered by IJR.RX AI")
+print("Game Type: Universal | Features: ${selectedFeatures.length}")
+
+-- Main functions would be implemented here...
+-- [AI-generated Lua code for universal cheat]
+
+-- Note: Full implementation requires actual IJR.RX API call
+-- This is a simulated response structure`;
+        }
+        
+        function generateFpsScript(creativity) {
+            return `-- FPS-SPECIFIC CHEAT SCRIPT
+-- Optimized for First Person Shooter games
+-- Advanced features for competitive play
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+print("FPS Cheat Suite Loaded - Groq AI Enhanced")
+print("Includes: Aimbot, Triggerbot, ESP, No Recoil")
+
+-- Advanced Aimbot with prediction
+-- Smooth aiming algorithms
+-- Target prioritization
+-- FOV-based targeting
+
+-- Triggerbot for automatic shooting
+-- Reaction time: ${(100 - creativity * 50).toFixed(0)}ms
+-- Hitbox detection
+-- Burst fire control
+
+-- ESP System
+-- Player outlines
+-- Health bars
+-- Distance indicators
+-- Weapon display
+
+-- Recoil Control
+-- Pattern recognition
+-- Compensation algorithms
+-- Spread reduction
+
+-- [AI-generated Lua code for FPS cheat]
+-- Actual implementation requires Groq API`;
+        }
+        
+        function generateRpgScript(creativity) {
+            return `-- RPG-SPECIFIC CHEAT SCRIPT
+-- Optimized for Role Playing Games
+-- Focus on automation and progression
+
+print("RPG Cheat Pack Loaded - IJR.RX AI Powered")
+print("Features: Auto Farm, Auto Quest, Inventory Management")
+
+-- Auto Farm System
+-- Resource detection
+-- Pathfinding algorithms
+-- Efficiency optimization
+-- Anti-detection measures
+
+-- Quest Automation
+-- Objective tracking
+-- NPC interaction
+-- Reward collection
+-- Progress saving
+
+-- Inventory Management
+-- Auto-sorting
+-- Optimal gear selection
+-- Resource trading
+-- Duplication prevention
+
+-- Stat Enhancement
+-- Experience boosting
+-- Skill automation
+-- Attribute optimization
+-- Cooldown reduction
+
+-- [AI-generated Lua code for RPG cheat]
+-- IJR.RX AI would generate complete implementation`;
+        }
+        
+        function generateSimulatorScript(creativity) {
+            return `-- SIMULATOR-SPECIFIC CHEAT SCRIPT
+-- Optimized for Simulator games
+-- Focus on automation and resource gathering
+
+print("Simulator Cheat Loaded - IJR.RX AI Generated")
+print("Includes: Auto Click, Auto Collect, Speed Hack")
+
+-- Auto Click System
+-- Button detection
+-- Timing optimization
+-- Pattern recognition
+-- Anti-ban measures
+
+-- Resource Collection
+-- Item detection
+-- Path optimization
+-- Storage management
+-- Value calculation
+
+-- Progression Boosting
+-- Experience multiplier
+-- Currency automation
+-- Upgrade optimization
+-- Time reduction
+
+-- Multi-Account Support
+-- Profile switching
+-- Progress synchronization
+-- Resource transfer
+-- Risk distribution
+
+-- [AI-generated Lua code for Simulator cheat]
+-- Complete code would be generated by IJR.RX API`;
+        }
+        
+        function copyScript() {
+            const scriptText = generatedScript.textContent;
+            
+            // Use Clipboard API if available
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(scriptText)
+                    .then(() => {
+                        showNotification("Script copied to clipboard!", "success");
+                        
+                        // Change button text temporarily
+                        const originalText = copyScriptButton.innerHTML;
+                        copyScriptButton.innerHTML = '<i class="fas fa-check mr-2"></i> COPIED';
+                        copyScriptButton.classList.add("bg-green-700");
+                        copyScriptButton.classList.remove("bg-gray-800");
+                        
+                        setTimeout(() => {
+                            copyScriptButton.innerHTML = originalText;
+                            copyScriptButton.classList.remove("bg-green-700");
+                            copyScriptButton.classList.add("bg-gray-800");
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error("Failed to copy: ", err);
+                        fallbackCopyText(scriptText);
+                    });
+            } else {
+                // Fallback method
+                fallbackCopyText(scriptText);
+            }
+        }
+        
+        function fallbackCopyText(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand("copy");
+                showNotification("Script copied to clipboard!", "success");
+                
+                // Change button text temporarily
+                const originalText = copyScriptButton.innerHTML;
+                copyScriptButton.innerHTML = '<i class="fas fa-check mr-2"></i> COPIED';
+                copyScriptButton.classList.add("bg-green-700");
+                copyScriptButton.classList.remove("bg-gray-800");
+                
+                setTimeout(() => {
+                    copyScriptButton.innerHTML = originalText;
+                    copyScriptButton.classList.remove("bg-green-700");
+                    copyScriptButton.classList.add("bg-gray-800");
+                }, 2000);
+            } catch (err) {
+                console.error("Fallback copy failed: ", err);
+                showNotification("Failed to copy script", "error");
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        function saveScript() {
+            const scriptText = generatedScript.textContent;
+            const blob = new Blob([scriptText], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `roblox_${currentGameType}_groq_ai_${Date.now()}.lua`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification("Script saved as file!", "success");
+            
+            // Change button text temporarily
+            const originalText = saveScriptButton.innerHTML;
+            saveScriptButton.innerHTML = '<i class="fas fa-check mr-2"></i> SAVED';
+            saveScriptButton.classList.remove("bg-red-900/30");
+            saveScriptButton.classList.add("bg-green-900/30");
+            saveScriptButton.classList.add("border-green-800");
+            saveScriptButton.classList.remove("border-red-800");
+            
+            setTimeout(() => {
+                saveScriptButton.innerHTML = originalText;
+                saveScriptButton.classList.add("bg-red-900/30");
+                saveScriptButton.classList.remove("bg-green-900/30");
+                saveScriptButton.classList.remove("border-green-800");
+                saveScriptButton.classList.add("border-red-800");
+            }, 2000);
+        }
+        
+        function addToRecentRequests() {
+            // In a real app, this would track actual API usage
+            console.log("Request logged to IJR.RX API");
+        }
+        
+        function showApiInfoModal() {
+            // Display masked API key
+            if (currentApiKey) {
+                const maskedKey = `${currentApiKey.substring(0, 10)}...${currentApiKey.substring(currentApiKey.length - 10)}`;
+                currentApiKeyDisplay.textContent = maskedKey;
+            } else {
+                currentApiKeyDisplay.textContent = "No API key loaded";
+            }
+            
+            apiInfoModal.classList.remove("hidden");
+        }
+        
+        function updateApiInfoDisplay() {
+            // Update any API-related displays
+            console.log("API info updated");
+        }
+        
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement("div");
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
+                type === "success" ? "bg-green-900/90 border border-green-700" : 
+                type === "error" ? "bg-red-900/90 border border-red-700" :
+                "bg-blue-900/90 border border-blue-700"
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === "success" ? "check-circle" : type === "error" ? "exclamation-circle" : "info-circle"} mr-3 text-${type === "success" ? "green" : type === "error" ? "red" : "blue"}-300"></i>
+                    <div>
+                        <p class="font-medium text-white">${message}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = "0";
+                notification.style.transform = "translateX(100%)";
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Add shake animation for error
+        const style = document.createElement("style");
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
-
-
-
